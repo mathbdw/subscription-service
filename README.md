@@ -18,7 +18,6 @@
 - **Language**: Go 1.24+
 - **Framework**: [Fiber](https://gofiber.io/) v2
 - **Database**: PostgreSQL
-- **ORM**: [sqlx](https://github.com/jmoiron/sqlx)
 - **Validation**: [go-playground/validator](https://github.com/go-playground/validator)
 - **Logging**: [zerolog](https://github.com/rs/zerolog)
 - **Testing**: [testify](https://github.com/stretchr/testify), [gomock](https://github.com/golang/mock)
@@ -50,7 +49,7 @@
 
 - Go 1.24+
 - Docker & Docker Compose
-- PostgreSQL 15+ (опционально для локальной разработки)
+- PostgreSQL 15+ (опционально для локальной разработки), не ниже 11+
 
 ### Local Development (без Docker)
 
