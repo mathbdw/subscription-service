@@ -16,7 +16,7 @@ RUN apk add --no-cache --update \
     curl \
     && rm -rf /var/cache/apk/*
 
-# Копирование Makefile
+# Build
 COPY . .
 RUN make build-go
 
