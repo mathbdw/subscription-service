@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  http-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - ompnw
+    depends_on:
+      - postgres
+    ports:
+      - 8080:8080 # REST
+    volumes:
+      - ./migrations:/root/migrations
+      - ./config.yml:/root/config.yml
+
+  postgres:
+    image: postgres:latest
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: test
+      APP_DB_USER: docker
+      APP_DB_PASS: docker
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - ompnw
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  ompnw:
+    driver: bridge

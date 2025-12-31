@@ -1,0 +1,301 @@
+basePath: /api/v1
+definitions:
+  dto.SubscriptionReq:
+    properties:
+      end_date:
+        example: 12-2002
+        type: string
+      price:
+        example: 100
+        maximum: 4294967295
+        minimum: 1
+        type: integer
+      service_name:
+        example: TestService
+        type: string
+      start_date:
+        example: 12-2001
+        type: string
+      user_id:
+        example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
+        type: string
+    required:
+    - price
+    - service_name
+    - start_date
+    - user_id
+    type: object
+  dto.SubscriptionUpdateReq:
+    properties:
+      end_date:
+        example: 12-2002
+        type: string
+      price:
+        example: 100
+        maximum: 4294967295
+        minimum: 1
+        type: integer
+      service_name:
+        example: TestService
+        type: string
+      start_date:
+        example: 12-2001
+        type: string
+      user_id:
+        example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
+        type: string
+    type: object
+  response.Error:
+    properties:
+      error:
+        example: message
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Subscription service API methods
+  title: Subscription API
+  version: "1.0"
+paths:
+  /subscription/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: delete subscription by ID
+      operationId: SubscriptionDelete
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      summary: delete subscription by ID
+      tags:
+      - Subscription
+    get:
+      consumes:
+      - application/json
+      description: Returns subscription by ID
+      operationId: SubscriptionGetByID
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      summary: get subscription by ID
+      tags:
+      - Subscription
+    patch:
+      consumes:
+      - application/json
+      description: update subscription by ID
+      operationId: SubscriptionUpdate
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data subscription
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SubscriptionUpdateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      summary: update subscription by ID
+      tags:
+      - Subscription
+  /subscription/cost:
+    get:
+      consumes:
+      - application/json
+      description: Returns cost subscriptions
+      operationId: SubscriptionCost
+      parameters:
+      - example: 01-2000
+        in: query
+        name: end_date
+        type: string
+      - example: TestService
+        in: query
+        maxLength: 255
+        minLength: 1
+        name: service_name
+        type: string
+      - example: 01-2000
+        in: query
+        name: start_date
+        type: string
+      - example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
+        in: query
+        name: user_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      summary: get cost subscriptions
+      tags:
+      - Subscription
+  /subscription/create:
+    post:
+      consumes:
+      - application/json
+      description: Create new subscription
+      operationId: SubscriptionCreate
+      parameters:
+      - description: Data subscription
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SubscriptionReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      summary: Create subscription
+      tags:
+      - Subscription
+  /subscription/list:
+    get:
+      consumes:
+      - application/json
+      description: Returns list subscriptions
+      operationId: SubscriptionList
+      parameters:
+      - example: 01-2000
+        in: query
+        name: end_date
+        type: string
+      - example: asc
+        in: query
+        name: order
+        type: string
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        maximum: 100
+        minimum: 1
+        name: page_size
+        type: integer
+      - example: TestService
+        in: query
+        maxLength: 255
+        minLength: 1
+        name: service_name
+        type: string
+      - example: id
+        in: query
+        name: sort
+        type: string
+      - example: 01-2000
+        in: query
+        name: start_date
+        type: string
+      - example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
+        in: query
+        name: user_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      summary: get list subscriptions
+      tags:
+      - Subscription
+swagger: "2.0"

@@ -1,0 +1,23 @@
+project:
+  name: subscription service
+  debug: true
+  environment: development
+  version: 1.0.0
+
+rest:
+  port: 8080
+  prefork:         false
+  readTimeout:     10s
+  writeTimeout:    10s
+  shutdownTimeout: 30s
+  swagger: true
+
+database:
+  name: test
+  sslmode: disable
+  migrations: migrations
+  driver: pgx
+  maxOpenConns: 5
+  maxIdleConns: 5
+  connMaxIdleTime: 5m
+  connMaxLifetime: 5m
