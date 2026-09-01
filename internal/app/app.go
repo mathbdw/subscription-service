@@ -17,15 +17,15 @@ import (
 	"github.com/mathbdw/subscription-service/internal/usecases/subscription"
 )
 
-// initLogger - initializing logger
+// initLogger - initializing logger.
 func initLogger(cfg *config.Config) observability.Logger {
-	logger := zerolog.New(cfg)
+	logger := zerolog.New(cfg, nil)
 	logger.Debug("app.initLogger: config running ", map[string]any{"config": cfg})
 
 	return logger
 }
 
-// initPostgres - initializing postgres
+// initPostgres - initializing postgres.
 func initPostgres(cfg *config.Config, logger observability.Logger) *postgres.Postgres {
 	pg, err := postgres.New(
 		logger,
@@ -43,23 +43,27 @@ func initPostgres(cfg *config.Config, logger observability.Logger) *postgres.Pos
 	return pg
 }
 
-// applyMigration - apply migration
+// applyMigration - apply migration.
 func applyMigration(cfg *config.Config, pg *postgres.Postgres, logger observability.Logger) {
 	if err := goose.Up(pg.Sqlx.DB, cfg.Database.Migrations); err != nil {
 		logger.Fatal("app.applyMigration: failed migration", map[string]any{"err": err})
 	}
 }
 
-// RunApp - run application
+// RunApp - run application.
 func RunApp(cfg *config.Config) {
 	logger := initLogger(cfg)
 	pg := initPostgres(cfg, logger)
-	defer pg.Sqlx.Close()
+	defer func() {
+		if err := pg.Sqlx.Close(); err != nil {
+			logger.Error("app.RunApp: close pg", map[string]any{"err": err.Error()})
+		}
 
+	}()
 	applyMigration(cfg, pg, logger)
 
 	repoSub := repositories.NewUserRepository(pg.Sqlx, pg.Builder, logger)
-	usSub := subscription.NewSubscriptionUsecase(repoSub, logger)
+	usSub := subscription.NewUsecase(repoSub, logger)
 
 	httpServer := httpserver.New(
 		httpserver.Address(cfg.Rest.Host, cfg.Rest.Port),

@@ -15,7 +15,7 @@ import (
 
 var builder sq.StatementBuilderType
 
-func init (){
+func init() {
 	builder = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 }
 
@@ -27,13 +27,13 @@ func TestQueryCriteria_ConditionList(t *testing.T) {
 
 	filter := entities.FilterParams{
 		ServiceName: "TestService",
-		UserId:      uuid.New(),
+		UserID:      uuid.New(),
 		StartDate:   entities.DateRange{From: &from, To: &to},
 	}
 	build = conditionList(build, filter)
 
-	sql, _, _ := build.ToSql()
-
+	sql, _, err := build.ToSql()
+	require.Nil(t, err)
 	assert.Equal(t, "SELECT * FROM test WHERE service_name LIKE $1 AND user_id = $2 AND start_date >= $3 AND start_date <= $4", sql)
 }
 
@@ -136,7 +136,7 @@ func TestQueryCriteria_ConditionCost(t *testing.T) {
 	to := time.Date(2020, time.January, 15, 15, 30, 0, 0, time.UTC)
 
 	serviceName := "TestService"
-	userId := uuid.New()
+	userID := uuid.New()
 	startDate := entities.DateRange{From: &from}
 	fullDate := entities.DateRange{From: &from, To: &to}
 
@@ -154,22 +154,22 @@ func TestQueryCriteria_ConditionCost(t *testing.T) {
 		},
 		{
 			name:           "WithServiceName",
-			fn:             func() { filter.ServiceName = serviceName},
+			fn:             func() { filter.ServiceName = serviceName },
 			exepectedQuery: "SELECT * FROM test WHERE service_name = $1",
 		},
 		{
-			name:           "WithServiceNameUserId",
-			fn:             func() { filter.UserId = userId },
+			name:           "WithServiceNameUserID",
+			fn:             func() { filter.UserID = userID },
 			exepectedQuery: "SELECT * FROM test WHERE service_name = $1 AND user_id = $2",
 		},
 		{
-			name: "WithServiceNameUserIdDateFrom",
-			fn:   func() { filter.StartDate = startDate },
+			name:           "WithServiceNameUserIDDateFrom",
+			fn:             func() { filter.StartDate = startDate },
 			exepectedQuery: "SELECT * FROM test WHERE service_name = $1 AND user_id = $2 AND start_date >= $3",
 		},
 		{
-			name: "WithServiceNameUserIdDateFromDateTo",
-			fn:   func() { filter.StartDate = fullDate },
+			name:           "WithServiceNameUserIDDateFromDateTo",
+			fn:             func() { filter.StartDate = fullDate },
 			exepectedQuery: "SELECT * FROM test WHERE service_name = $1 AND user_id = $2 AND start_date >= $3 AND start_date <= $4",
 		},
 	}
@@ -179,8 +179,9 @@ func TestQueryCriteria_ConditionCost(t *testing.T) {
 			tt.fn()
 			build := builder.Select("*").From("test")
 			build = conditionCost(build, filter)
-			sql, _, _ := build.ToSql()
+			sql, _, err := build.ToSql()
 
+			require.Nil(t, err)
 			require.Equal(t, tt.exepectedQuery, sql)
 		})
 	}

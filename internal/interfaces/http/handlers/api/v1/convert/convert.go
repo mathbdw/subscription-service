@@ -14,7 +14,7 @@ import (
 func SubscriptionRequestToEntity(req dto.SubscriptionReq) (entities.Subscription, error) {
 	sub := entities.Subscription{
 		ServiceName: req.ServiceName,
-		UserId:      req.UserId,
+		UserID:      req.UserID,
 		Price:       req.Price,
 	}
 	tmpDate, err := time.Parse("01-2006", req.StartDate)
@@ -41,7 +41,7 @@ func SubscriptionRequestToEntity(req dto.SubscriptionReq) (entities.Subscription
 func SubscriptionRequestToMap(req dto.SubscriptionUpdateReq) (map[string]any, error) {
 	dataMap := map[string]any{
 		"service_name": req.ServiceName,
-		"user_id":      req.UserId,
+		"user_id":      req.UserID,
 		"price":        req.Price,
 	}
 	tmpDate, err := time.Parse("01-2006", req.StartDate)
@@ -65,7 +65,7 @@ func SubscriptionEntityToResponse(entity entities.Subscription) dto.Subscription
 
 	resp := dto.SubscriptionResp{
 		ServiceName: entity.ServiceName,
-		UserId:      entity.UserId,
+		UserID:      entity.UserID,
 		Price:       entity.Price,
 		StartDate:   entity.StartDate.Format("01-2006"),
 	}
@@ -107,26 +107,26 @@ func SubscriptionQueryParamsToQueryCriteria(params dto.QueryParamList) (*entitie
 	if params.Page == 0 {
 		queryCriteria.Pagination.Page = uint64(1)
 	} else {
-		queryCriteria.Pagination.Page = uint64(params.Page)
+		queryCriteria.Pagination.Page = params.Page
 	}
 
 	if params.Limit == 0 {
 		queryCriteria.Pagination.Limit = uint64(20)
 	} else {
-		queryCriteria.Pagination.Limit = uint64(params.Limit)
+		queryCriteria.Pagination.Limit = params.Limit
 	}
 
 	if params.ServiceName != "" {
 		queryCriteria.Filter.ServiceName = params.ServiceName
 	}
 
-	if params.UserId != "" {
-		tmpUUID, err = uuid.Parse(params.UserId)
+	if params.UserID != "" {
+		tmpUUID, err = uuid.Parse(params.UserID)
 		if err != nil {
-			return nil, fmt.Errorf("UUID parse - %s", params.UserId)
+			return nil, fmt.Errorf("UUID parse - %s", params.UserID)
 		}
 
-		queryCriteria.Filter.UserId = tmpUUID
+		queryCriteria.Filter.UserID = tmpUUID
 	}
 
 	if params.StartDate != "" {
@@ -151,22 +151,22 @@ func SubscriptionQueryParamsToQueryCriteria(params dto.QueryParamList) (*entitie
 
 func SubscriptionQueryParamsCostToFilterParam(params dto.QueryParamCost) (entities.FilterParams, error) {
 	var (
-		filter entities.FilterParams
-		tmpUUID       uuid.UUID
-		err           error
+		filter  entities.FilterParams
+		tmpUUID uuid.UUID
+		err     error
 	)
 
 	if params.ServiceName != "" {
 		filter.ServiceName = params.ServiceName
 	}
 
-	if params.UserId != "" {
-		tmpUUID, err = uuid.Parse(params.UserId)
+	if params.UserID != "" {
+		tmpUUID, err = uuid.Parse(params.UserID)
 		if err != nil {
-			return entities.FilterParams{}, fmt.Errorf("UUID parse - %s", params.UserId)
+			return entities.FilterParams{}, fmt.Errorf("UUID parse - %s", params.UserID)
 		}
 
-		filter.UserId = tmpUUID
+		filter.UserID = tmpUUID
 	}
 
 	if params.StartDate != "" {

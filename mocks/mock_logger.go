@@ -12,8 +12,9 @@ package mocks
 import (
 	reflect "reflect"
 
-	observability "github.com/mathbdw/subscription-service/internal/interfaces/observability"
 	gomock "go.uber.org/mock/gomock"
+
+	observability "github.com/mathbdw/subscription-service/internal/interfaces/observability"
 )
 
 // MockLogger is a mock of Logger interface.

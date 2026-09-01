@@ -7,7 +7,7 @@ import (
 )
 
 type (
-	SortType    string
+	SortType      string
 	SortOrderType string
 )
 
@@ -27,7 +27,7 @@ type QueryCriteria struct {
 
 type FilterParams struct {
 	ServiceName string
-	UserId      uuid.UUID
+	UserID      uuid.UUID
 	StartDate   DateRange
 }
 
@@ -46,12 +46,12 @@ type SortParams struct {
 	SortOrder SortOrderType
 }
 
-var SortByTypes = map[string]bool {
-	string(SortTypeID): true,
+var SortByTypes = map[string]bool{
+	string(SortTypeID):          true,
 	string(SortTypeServiceName): true,
 }
 
-var SortOrderTypes = map[string]bool {
-	string(SortOrderTypeAsc): true,
+var SortOrderTypes = map[string]bool{
+	string(SortOrderTypeAsc):  true,
 	string(SortOrderTypeDesc): true,
 }

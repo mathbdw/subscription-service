@@ -1,0 +1,11 @@
+run:
+  timeout: 5m
+linters:
+  disable-all: true
+  enable:
+    - errcheck   # Проверка необработанных ошибок
+    - gosimple   # Упрощение кода
+    - govet      # Стандартный vet
+    - ineffassign # Неиспользуемые присваивания
+    - staticcheck # Продвинутый статический анализ
+    - unused     # Неиспользуемый кодgolangci-lint run

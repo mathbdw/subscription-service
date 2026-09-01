@@ -15,14 +15,15 @@ import (
 )
 
 type logger struct {
-	level *atomic.Int32
-	mu    sync.RWMutex
+	level    *atomic.Int32
+	mu       sync.RWMutex
+	exitFunc func(int)
 
 	baseLogger zlog.Logger
 }
 
-// New - Constructor logger
-func New(cfg *config.Config) observability.Logger {
+// New - Constructor logger.
+func New(cfg *config.Config, exitFunc func(int)) observability.Logger {
 	skipFrameCount := 1
 
 	level := &atomic.Int32{}
@@ -57,13 +58,18 @@ func New(cfg *config.Config) observability.Logger {
 		CallerWithSkipFrameCount(zlog.CallerSkipFrameCount + skipFrameCount).
 		Logger().Level(zlevel)
 
+	if exitFunc == nil {
+		exitFunc = os.Exit
+	}
+
 	return &logger{
 		level:      level,
+		exitFunc:   exitFunc,
 		baseLogger: baseLogger,
 	}
 }
 
-// SetLevel - set new level
+// SetLevel - set new level.
 func (l *logger) SetLevel(newLevel int8) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -72,97 +78,87 @@ func (l *logger) SetLevel(newLevel int8) {
 	l.baseLogger = l.baseLogger.Level(zlog.Level(newLevel))
 }
 
-// Debug - implementation of Debug for zerolog
+// Debug - implementation of Debug for zerolog.
 func (l *logger) Debug(msg string, fields observability.Field) {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-
 	Msg(l.baseLogger.Debug(), fields).Msg(msg)
 }
 
-// Info - implementation of Info for zerolog
+// Info - implementation of Info for zerolog.
 func (l *logger) Info(msg string, fields observability.Field) {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-
 	Msg(l.baseLogger.Info(), fields).Msg(msg)
 }
 
-// Warn - implementation of Warn for zerolog
+// Warn - implementation of Warn for zerolog.
 func (l *logger) Warn(msg string, fields observability.Field) {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-
 	Msg(l.baseLogger.Warn(), fields).Msg(msg)
 }
 
-// Error - implementation of Error for zerolog
+// Error - implementation of Error for zerolog.
 func (l *logger) Error(msg string, fields observability.Field) {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-
 	Msg(l.baseLogger.Error(), fields).Msg(msg)
 }
 
-// Fatal - implementation of Fatal for zerolog
+// Fatal - implementation of Fatal for zerolog.
 func (l *logger) Fatal(msg string, fields observability.Field) {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-
 	Msg(l.baseLogger.Error(), fields).Msg(msg)
-	os.Exit(1)
+	l.exitFunc(1)
 }
 
-// Msg - adds fields for the zerolog event
+// Msg - adds fields for the zerolog event.
 func Msg(event *zlog.Event, fields observability.Field) *zlog.Event {
 	for key, value := range fields {
-		switch v := value.(type) {
-		case int:
-			event.Int(key, v)
-		case int8:
-			event.Int8(key, v)
-		case int16:
-			event.Int16(key, v)
-		case int32:
-			event.Int32(key, v)
-		case int64:
-			event.Int64(key, v)
-		case []int:
-			event.Ints(key, v)
-		case []int8:
-			event.Ints8(key, v)
-		case []int16:
-			event.Ints16(key, v)
-		case []int32:
-			event.Ints32(key, v)
-		case []int64:
-			event.Ints64(key, v)
-		case uint8:
-			event.Uint8(key, v)
-		case uint16:
-			event.Uint16(key, v)
-		case uint32:
-			event.Uint32(key, v)
-		case uint64:
-			event.Uint64(key, v)
-		case []uint8:
-			event.Uints8(key, v)
-		case []uint16:
-			event.Uints16(key, v)
-		case []uint32:
-			event.Uints32(key, v)
-		case []uint64:
-			event.Uints64(key, v)
-		case string:
-			event.Str(key, v)
-		case []string:
-			event.Strs(key, v)
-		case bool:
-			event.Bool(key, v)
-		default:
-			event.Str(key, fmt.Sprintf("%+v", v))
-		}
+		addField(event, key, value)
 	}
 
 	return event
+}
+
+//nolint:gocyclo // Требуется для поддержки всех типов данных
+func addField(event *zlog.Event, key string, value interface{}) {
+	switch v := value.(type) {
+	case int:
+		event.Int(key, v)
+	case int8:
+		event.Int8(key, v)
+	case int16:
+		event.Int16(key, v)
+	case int32:
+		event.Int32(key, v)
+	case int64:
+		event.Int64(key, v)
+	case []int:
+		event.Ints(key, v)
+	case []int8:
+		event.Ints8(key, v)
+	case []int16:
+		event.Ints16(key, v)
+	case []int32:
+		event.Ints32(key, v)
+	case []int64:
+		event.Ints64(key, v)
+	case uint8:
+		event.Uint8(key, v)
+	case uint16:
+		event.Uint16(key, v)
+	case uint32:
+		event.Uint32(key, v)
+	case uint64:
+		event.Uint64(key, v)
+	case []uint8:
+		event.Uints8(key, v)
+	case []uint16:
+		event.Uints16(key, v)
+	case []uint32:
+		event.Uints32(key, v)
+	case []uint64:
+		event.Uints64(key, v)
+	case string:
+		event.Str(key, v)
+	case []string:
+		event.Strs(key, v)
+	case bool:
+		event.Bool(key, v)
+	default:
+		event.Str(key, fmt.Sprintf("%+v", v))
+	}
 }

@@ -10,14 +10,14 @@ import (
 // Option -.
 type Option func(*Postgres)
 
-// Driver - Set driver
+// Driver - Set driver.
 func Driver(driver string) Option {
 	return func(p *Postgres) {
 		p.driver = driver
 	}
 }
 
-// Dsn - Set data source name
+// Dsn - Set data source name.
 func Dsn(cfg config.Database) Option {
 	return func(p *Postgres) {
 		p.dsn = fmt.Sprintf("host=%v port=%v user=%v password=%v dbname=%v sslmode=%v",
@@ -31,28 +31,28 @@ func Dsn(cfg config.Database) Option {
 	}
 }
 
-// MaxOpenConns - Set maximum open connections
+// MaxOpenConns - Set maximum open connections.
 func MaxOpenConns(cnt int) Option {
 	return func(p *Postgres) {
 		p.maxOpenConns = cnt
 	}
 }
 
-// MaxIdleConns - Set maximum Idle connections
+// MaxIdleConns - Set maximum Idle connections.
 func MaxIdleConns(cnt int) Option {
 	return func(p *Postgres) {
 		p.maxIdleConns = cnt
 	}
 }
 
-// ConnMaxIdleTime - Set maximum connection idle time
+// ConnMaxIdleTime - Set maximum connection idle time.
 func ConnMaxIdleTime(time time.Duration) Option {
 	return func(p *Postgres) {
 		p.connMaxIdleTime = time
 	}
 }
 
-// ConnMaxLifetime - Set maximum connection lifetime
+// ConnMaxLifetime - Set maximum connection lifetime.
 func ConnMaxLifetime(time time.Duration) Option {
 	return func(p *Postgres) {
 		p.connMaxLifeTime = time

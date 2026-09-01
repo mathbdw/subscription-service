@@ -23,7 +23,7 @@ type subscriptionRepository struct {
 	logger observability.Logger
 }
 
-// NewUserRepository - Constructor UserRepository
+// NewUserRepository - Constructor UserRepository.
 func NewUserRepository(querier sqlx.ExtContext, builder sq.StatementBuilderType, logger observability.Logger) repositories.SubscriptionRepository {
 	return &subscriptionRepository{
 		querier: querier,
@@ -40,7 +40,7 @@ var (
 	columnsCost        = []string{"COALESCE(SUM(price), 0)"}
 )
 
-// Create - create new row
+// Create - create new row.
 func (r *subscriptionRepository) Create(ctx context.Context, subs entities.Subscription) error {
 	dataMap := SubscriptionToMap(subs)
 
@@ -66,7 +66,7 @@ func (r *subscriptionRepository) Create(ctx context.Context, subs entities.Subsc
 	return nil
 }
 
-// GetByID - Returns subscription by ID
+// GetByID - Returns subscription by ID.
 func (r *subscriptionRepository) GetByID(ctx context.Context, id int64) (*entities.Subscription, error) {
 	query, args, err := r.builder.Select(columnsSelect...).
 		From(table).
@@ -89,7 +89,7 @@ func (r *subscriptionRepository) GetByID(ctx context.Context, id int64) (*entiti
 	return sub, nil
 }
 
-// List - Returns a list of subscription using query criteria
+// List - Returns a list of subscription using query criteria.
 func (r *subscriptionRepository) List(ctx context.Context, params entities.QueryCriteria) (*entities.ResponseListSubscription, error) {
 	query := r.builder.Select(columnsSelectCount...).From(table)
 	query = conditionList(query, params.Filter)
@@ -120,7 +120,11 @@ func (r *subscriptionRepository) List(ctx context.Context, params entities.Query
 	if err != nil {
 		return nil, errs.Wrap(err, "subscriptionRepositories.List: get query")
 	}
-	defer rows.Close()
+	defer func() {
+		if err = rows.Close(); err != nil {
+			r.logger.Error("subscriptionRepositories.List: rows close", map[string]any{"err": err.Error()})
+		}
+	}()
 
 	subs := make([]entities.Subscription, 0, params.Pagination.Limit)
 	for rows.Next() {
@@ -141,6 +145,10 @@ func (r *subscriptionRepository) List(ctx context.Context, params entities.Query
 		totalPages++
 	}
 
+	// Несмотря на предупреждение gosec, приведение безопасно, так как значение Limit
+	// валидируется на уровне API и никогда не превышает разумного лимита (<= 1000).
+	// Использование uint16 для PageSize соответствует структуре ответа API.
+	//nolint:gosec // G115: integer overflow conversion uint64 -> uint16
 	return &entities.ResponseListSubscription{
 		Data: subs,
 		Info: entities.PaginationInfo{
@@ -152,7 +160,7 @@ func (r *subscriptionRepository) List(ctx context.Context, params entities.Query
 	}, nil
 }
 
-// Update - Updated the fields
+// Update - Updated the fields.
 func (r *subscriptionRepository) Update(ctx context.Context, id int64, fields map[string]any) error {
 	if err := validateUpdateFields(fields); err != nil {
 		r.logger.Error("subscriptionRepositories.Update: validateUpdateFields", fields)
@@ -187,7 +195,7 @@ func (r *subscriptionRepository) Update(ctx context.Context, id int64, fields ma
 	return nil
 }
 
-// Delete - Deleted row with the id
+// Delete - Deleted row with the id.
 func (r *subscriptionRepository) Delete(ctx context.Context, id int64) error {
 	query, args, err := r.builder.Delete(table).
 		Where(sq.Eq{"id": id}).
@@ -213,7 +221,7 @@ func (r *subscriptionRepository) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// GetCost - Returns total cost of user subscription
+// GetCost - Returns total cost of user subscription.
 func (r *subscriptionRepository) GetCost(ctx context.Context, params entities.FilterParams) (int64, error) {
 	query := r.builder.Select(columnsCost...).From(table)
 	query = conditionCost(query, params)

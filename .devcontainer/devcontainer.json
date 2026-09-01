@@ -1,0 +1,94 @@
+{
+  // ============================================
+  // 1. ОСНОВНАЯ ИНФОРМАЦИЯ
+  // ============================================
+  // 👇 Имя контейнера (отображается в VS Code)
+  "name": "Subscription Service Dev Container",
+  // ============================================
+  // 2. СПОСОБ СБОРКИ КОНТЕЙНЕРА
+  // ============================================
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "http-server",
+  "workspaceFolder": "/workspace",
+  "runServices": [
+    "postgres" /*, "redis"*/
+  ],
+  // ============================================
+  // 3. НАСТРОЙКИ ДЛЯ IDE
+  // ============================================
+  "customizations": {
+    // 👇 Настройки для VS Code
+    "vscode": {
+      // Расширения, которые установятся в контейнер автоматически
+      "extensions": [
+        // Основное расширение Go
+        "golang.Go",
+        // Подсветка и автодополнение для Makefile
+        "ms-vscode.makefile-tools",
+        // Подсветка GitHub Actions
+        "github.vscode-github-actions",
+        // Расширенный Git-инструмент
+        "eamodio.gitlens",
+        // Проверка орфографии в комментариях
+        // "streetsidesoftware.code-spell-checker",
+        // Подсветка Dockerfile и docker-compose
+        "ms-azuretools.vscode-docker"
+      ],
+      // 👇 Настройки VS Code внутри контейнера
+      "settings": {
+        // Использовать языковой сервер Go
+        "go.useLanguageServer": true,
+        // Автоформатирование при сохранении
+        "editor.formatOnSave": true,
+        // Инструмент для форматирования
+        "go.formatTool": "goimports",
+        // Автоматически добавлять импорты
+        "go.addTags": {
+          "tags": "json,db",
+          "options": "json=omitempty"
+        },
+        // Терминал по умолчанию
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  // ============================================
+  // 4. КОМАНДЫ ПРИ ЗАПУСКЕ
+  // ============================================
+  // 👇 Выполняется ОДИН РАЗ после создания контейнера
+  "postCreateCommand": "make setup",
+  // 👇 Выполняется КАЖДЫЙ РАЗ при запуске контейнера
+  "postStartCommand": "make dev",
+  // ============================================
+  // 5. ПОЛЬЗОВАТЕЛЬ И ОКРУЖЕНИЕ
+  // ============================================
+  // 👇 Пользователь внутри контейнера (root — удобно, но небезопасно)
+  "remoteUser": "root",
+  // 👇 Переменные окружения внутри контейнера
+  "containerEnv": {
+    "GO111MODULE": "on",
+    "GOPROXY": "https://proxy.golang.org,direct",
+    "GOSUMDB": "sum.golang.org",
+    "DB_HOST": "postgres",
+    "REDIS_HOST": "redis"
+  },
+  // ============================================
+  // 6. МОНТИРОВАНИЕ (ПРОБРОС) ПАПОК
+  // ============================================
+  "mounts": [
+    // Проброс глобального .gitconfig
+    "source=${env:HOME}/.gitconfig,target=/root/.gitconfig,type=bind",
+    // Проброс SSH-агента (для доступа к приватным репозиториям)
+    "source=${env:SSH_AUTH_SOCK},target=/run/ssh-agent.sock,type=bind"
+  ],
+  // ============================================
+  // 7. РАСШИРЕННЫЕ НАСТРОЙКИ (ЗАМЕНА runArgs)
+  // ============================================
+  // 👇 Ограничения ресурсов (вместо runArgs)
+  "containerUser": "root",
+  // 👇 Проброс портов
+  "forwardPorts": [
+    "8080:8080",
+    "2345:2345"
+  ]
+}

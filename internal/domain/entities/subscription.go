@@ -8,14 +8,14 @@ import (
 )
 
 type Subscription struct {
-	ID          int64     `db:"id"`
-	ServiceName string    `db:"service_name"`
-	UserId      uuid.UUID `db:"user_id"`
-	Price       uint32    `db:"price"`
-	StartDate   time.Time `db:"start_date"`
+	ID          int64        `db:"id"`
+	ServiceName string       `db:"service_name"`
+	UserID      uuid.UUID    `db:"user_id"`
+	Price       uint32       `db:"price"`
+	StartDate   time.Time    `db:"start_date"`
 	EndDate     sql.NullTime `db:"end_date"`
-	CreatedAt   time.Time `db:"created_at"`
-	UpdatedAt   time.Time `db:"updated_at"`
+	CreatedAt   time.Time    `db:"created_at"`
+	UpdatedAt   time.Time    `db:"updated_at"`
 }
 
 type PaginationInfo struct {

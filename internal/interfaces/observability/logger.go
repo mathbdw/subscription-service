@@ -1,6 +1,5 @@
 package observability
 
-
 type Field map[string]any
 
 //go:generate mockgen -destination=./../../../mocks/mock_logger.go -package=mocks -source=./logger.go

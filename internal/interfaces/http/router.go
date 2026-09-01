@@ -7,7 +7,7 @@ import (
 
 	"github.com/mathbdw/subscription-service/config"
 	_ "github.com/mathbdw/subscription-service/docs/swagger" // Swagger docs.
-	"github.com/mathbdw/subscription-service/internal/interfaces/http/handlers/api/v1"
+	v1 "github.com/mathbdw/subscription-service/internal/interfaces/http/handlers/api/v1"
 	"github.com/mathbdw/subscription-service/internal/interfaces/http/middleware"
 	"github.com/mathbdw/subscription-service/internal/interfaces/observability"
 	uc "github.com/mathbdw/subscription-service/internal/usecases/subscription"
@@ -19,8 +19,8 @@ import (
 // @description Subscription service API methods
 // @version     1.0
 // @host        localhost:8080
-// @BasePath    /api/v1
-func NewRouter(app *fiber.App, cfg *config.Rest, uc uc.SubscriptionUsecase, logger observability.Logger) {
+// @BasePath    /api/v1.
+func NewRouter(app *fiber.App, cfg *config.Rest, uc uc.Usecase, logger observability.Logger) {
 	// Options
 	app.Use(middleware.Logger(logger))
 	app.Use(middleware.Recovery(logger))

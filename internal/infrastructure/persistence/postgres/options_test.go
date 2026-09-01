@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mathbdw/subscription-service/config"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/mathbdw/subscription-service/config"
 )
 
 func TestDriver(t *testing.T) {

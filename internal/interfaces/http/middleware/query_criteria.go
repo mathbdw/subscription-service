@@ -17,39 +17,40 @@ import (
 
 var validate = validator.New()
 
+func haveToRegisterValidation(tag string, fn validator.Func) {
+	err := validate.RegisterValidation(tag, fn)
+	if err != nil {
+		panic("middaleware.RegisterValidation: tag %s")
+	}
+}
+
 func init() {
-	_ = validate.RegisterValidation("sort_by", func(fl validator.FieldLevel) bool {
+	haveToRegisterValidation("sort_by", func(fl validator.FieldLevel) bool {
 		val := fl.Field().String()
+		_, ok := entities.SortByTypes[val]
 
-		if _, ok := entities.SortByTypes[val]; !ok {
-			return false
-		}
-
-		return true
+		return ok
 	})
-	_ = validate.RegisterValidation("sort_order", func(fl validator.FieldLevel) bool {
+
+	haveToRegisterValidation("sort_order", func(fl validator.FieldLevel) bool {
 		val := fl.Field().String()
 		val = strings.ToUpper(val)
+		_, ok := entities.SortOrderTypes[val]
 
-		if _, ok := entities.SortOrderTypes[val]; !ok {
-			return false
-		}
-
-		return true
+		return ok
 	})
-	_ = validate.RegisterValidation("uuid", func(fl validator.FieldLevel) bool {
+
+	haveToRegisterValidation("uuid", func(fl validator.FieldLevel) bool {
 		val := fl.Field().String()
 
-		if _, err := uuid.Parse(val); err != nil {
-			return false
-		}
+		_, err := uuid.Parse(val)
 
-		return true
+		return err == nil
 	})
 
 }
 
-// ValidatedQueryParamsMiddleware - middleware parse and validate params query for List
+// ValidatedQueryParamsMiddleware - middleware parse and validate params query for List.
 func ValidatedQueryParamsMiddleware(logger observability.Logger) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		var queryParams dto.QueryParamList
@@ -71,7 +72,7 @@ func ValidatedQueryParamsMiddleware(logger observability.Logger) fiber.Handler {
 	}
 }
 
-// ValidatedQueryParamsCostMiddleware - middleware parse and validate params query for Goat
+// ValidatedQueryParamsCostMiddleware - middleware parse and validate params query for Goat.
 func ValidatedQueryParamsCostMiddleware(logger observability.Logger) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		var queryParams dto.QueryParamCost
@@ -93,8 +94,8 @@ func ValidatedQueryParamsCostMiddleware(logger observability.Logger) fiber.Handl
 	}
 }
 
-// ValidatedQueryIdMiddleware - middleware parse and validate params query ID subscription
-func ValidatedQueryIdMiddleware(logger observability.Logger) fiber.Handler {
+// ValidatedQueryIdMiddleware - middleware parse and validate params query ID subscription.
+func ValidatedQueryIDMiddleware(logger observability.Logger) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		subStrID := ctx.Params("id")
 		subID, err := strconv.ParseInt(subStrID, 10, 64)

@@ -13,8 +13,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	entities "github.com/mathbdw/subscription-service/internal/domain/entities"
 	gomock "go.uber.org/mock/gomock"
+
+	entities "github.com/mathbdw/subscription-service/internal/domain/entities"
 )
 
 // MockSubscriptionRepository is a mock of SubscriptionRepository interface.

@@ -5,6 +5,7 @@ project:
   version: 1.0.0
 
 rest:
+  host: localhost
   port: 8080
   prefork:         false
   readTimeout:     10s

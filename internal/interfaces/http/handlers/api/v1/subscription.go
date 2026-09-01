@@ -21,12 +21,12 @@ import (
 type HandlerSubscription struct {
 	r         fiber.Router
 	validator *validator.Validate
-	uc        uc.SubscriptionUsecase
+	uc        uc.Usecase
 
 	logger observability.Logger
 }
 
-func NewHandler(apiV1Group fiber.Router, validator *validator.Validate, uc uc.SubscriptionUsecase, logger observability.Logger) {
+func NewHandler(apiV1Group fiber.Router, validator *validator.Validate, uc uc.Usecase, logger observability.Logger) {
 	router := HandlerSubscription{
 		uc:        uc,
 		validator: validator,
@@ -39,11 +39,12 @@ func NewHandler(apiV1Group fiber.Router, validator *validator.Validate, uc uc.Su
 		subscriptionGroup.Get("/list", middleware.ValidatedQueryParamsMiddleware(logger), router.list)
 		subscriptionGroup.Get("/cost", middleware.ValidatedQueryParamsCostMiddleware(logger), router.cost)
 
-		subscriptionGroup.Get("/:id", middleware.ValidatedQueryIdMiddleware(logger), router.getId)
-		subscriptionGroup.Delete("/:id", middleware.ValidatedQueryIdMiddleware(logger), router.delete)
-		subscriptionGroup.Patch("/:id", middleware.ValidatedQueryIdMiddleware(logger), router.update)
+		subscriptionGroup.Get("/:id", middleware.ValidatedQueryIDMiddleware(logger), router.getID)
+		subscriptionGroup.Delete("/:id", middleware.ValidatedQueryIDMiddleware(logger), router.delete)
+		subscriptionGroup.Patch("/:id", middleware.ValidatedQueryIDMiddleware(logger), router.update)
 	}
 
+	router.r = subscriptionGroup
 }
 
 // @Summary     Create subscription
@@ -57,7 +58,7 @@ func NewHandler(apiV1Group fiber.Router, validator *validator.Validate, uc uc.Su
 // @Failure     400 {object} response.Error
 // @Failure     422 {object} response.Error
 // @Failure     500 {object} response.Error
-// @Router      /subscription/create [post]
+// @Router      /subscription/create [post].
 func (h *HandlerSubscription) create(ctx *fiber.Ctx) error {
 	var body dto.SubscriptionReq
 	if err := ctx.BodyParser(&body); err != nil {
@@ -99,8 +100,8 @@ func (h *HandlerSubscription) create(ctx *fiber.Ctx) error {
 // @Failure     400 {object} response.Error
 // @Failure     422 {object} response.Error
 // @Failure     500 {object} response.Error
-// @Router      /subscription/{id} [get]
-func (h *HandlerSubscription) getId(ctx *fiber.Ctx) error {
+// @Router      /subscription/{id} [get].
+func (h *HandlerSubscription) getID(ctx *fiber.Ctx) error {
 	subID, ok := ctx.Locals("query_id").(int64)
 	if !ok {
 		h.logger.Error("subscriptionV1.GetId: get query_id", nil)
@@ -135,7 +136,7 @@ func (h *HandlerSubscription) getId(ctx *fiber.Ctx) error {
 // @Failure     400 {object} response.Error
 // @Failure     422 {object} response.Error
 // @Failure     500 {object} response.Error
-// @Router      /subscription/list [get]
+// @Router      /subscription/list [get].
 func (h *HandlerSubscription) list(ctx *fiber.Ctx) error {
 	params, ok := ctx.Locals("query_params").(dto.QueryParamList)
 	if !ok {
@@ -179,7 +180,7 @@ func (h *HandlerSubscription) list(ctx *fiber.Ctx) error {
 // @Failure     400 {object} response.Error
 // @Failure     422 {object} response.Error
 // @Failure     500 {object} response.Error
-// @Router      /subscription/{id} [delete]
+// @Router      /subscription/{id} [delete].
 func (h *HandlerSubscription) delete(ctx *fiber.Ctx) error {
 	subID, ok := ctx.Locals("query_id").(int64)
 	if !ok {
@@ -215,7 +216,7 @@ func (h *HandlerSubscription) delete(ctx *fiber.Ctx) error {
 // @Failure     400 {object} response.Error
 // @Failure     422 {object} response.Error
 // @Failure     500 {object} response.Error
-// @Router      /subscription/{id} [patch]
+// @Router      /subscription/{id} [patch].
 func (h *HandlerSubscription) update(ctx *fiber.Ctx) error {
 	subID, ok := ctx.Locals("query_id").(int64)
 	if !ok {
@@ -269,7 +270,7 @@ func (h *HandlerSubscription) update(ctx *fiber.Ctx) error {
 // @Failure     400 {object} response.Error
 // @Failure     422 {object} response.Error
 // @Failure     500 {object} response.Error
-// @Router      /subscription/cost [get]
+// @Router      /subscription/cost [get].
 func (h *HandlerSubscription) cost(ctx *fiber.Ctx) error {
 	params, ok := ctx.Locals("query_cost").(dto.QueryParamCost)
 	if !ok {
@@ -299,7 +300,7 @@ func (h *HandlerSubscription) cost(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusOK).JSON(cost)
 }
 
-// addPaginationHeaders - sets response headers pagination params for list
+// addPaginationHeaders - sets response headers pagination params for list.
 func addPaginationHeaders(ctx *fiber.Ctx, info entities.PaginationInfo) {
 	ctx.Set("X-Page", strconv.FormatUint(info.Page, 10))
 	ctx.Set("X-Page-Size", strconv.FormatUint(uint64(info.PageSize), 10))

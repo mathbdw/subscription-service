@@ -14,14 +14,14 @@ var (
 	ErrInternal      = New("internal error")
 )
 
-// Error - represents a domain error
+// Error - represents a domain error.
 type Error struct {
 	msg   string
 	cause error
 	stack []uintptr
 }
 
-// New - creates a new error
+// New - creates a new error.
 func New(message string) error {
 	return &Error{
 		msg:   message,
@@ -29,7 +29,7 @@ func New(message string) error {
 	}
 }
 
-// Wrap - wraps an error with additional context
+// Wrap - wraps an error with additional context.
 func Wrap(err error, message string) error {
 	if err == nil {
 		return nil
@@ -41,7 +41,7 @@ func Wrap(err error, message string) error {
 	}
 }
 
-// Error - implements the error interface
+// Error - implements the error interface.
 func (e *Error) Error() string {
 	if e.cause != nil {
 		return fmt.Sprintf("%s: %s", e.msg, e.cause.Error())
@@ -49,12 +49,12 @@ func (e *Error) Error() string {
 	return e.msg
 }
 
-// Unwrap - returns the underlying error
+// Unwrap - returns the underlying error.
 func (e *Error) Unwrap() error {
 	return e.cause
 }
 
-// Is - implements the errors.Is interface
+// Is - implements the errors.Is interface.
 func (e *Error) Is(target error) bool {
 	if target == nil {
 		return false
@@ -72,7 +72,7 @@ func (e *Error) StackTrace() string {
 
 	for {
 		frame, more := frames.Next()
-		sb.WriteString(fmt.Sprintf("%s\n\t%s:%d\n", frame.Function, frame.File, frame.Line))
+		fmt.Fprintf(&sb, "%s\n\t%s:%d\n", frame.Function, frame.File, frame.Line)
 		if !more {
 			break
 		}

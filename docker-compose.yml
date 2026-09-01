@@ -4,8 +4,8 @@ services:
   http-server:
     build:
       context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
+      dockerfile: .devcontainer/Dockerfile
+    # restart: unless-stopped
     env_file:
       - .env
     networks:
@@ -17,9 +17,10 @@ services:
     volumes:
       - ./migrations:/root/migrations
       - ./config.yml:/root/config.yml
+      - .:/workspace
 
   postgres:
-    image: postgres:latest
+    image: postgres:16-alpine
     healthcheck:
       test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres" ]
       timeout: 45s
@@ -29,13 +30,14 @@ services:
     ports:
       - 5433:5432
     environment:
-      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: test
+      PG_USER: postgres
+      PG_PASSWORD: postgres
+      PG_DB: test
       APP_DB_USER: docker
       APP_DB_PASS: docker
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/16/data
     networks:
       - ompnw
 

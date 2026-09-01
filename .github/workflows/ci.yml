@@ -1,0 +1,64 @@
+name: Go CI Pipeline
+
+# Когда запускать?
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master ]
+
+# Определим переменные окружения для кэша Go
+env:
+  GO_VERSION: '1.24'
+
+jobs:
+  # Джоба проверки качества кода
+  lint:
+    name: Lint and Vet
+    runs-on: ubuntu-22.04
+    steps:
+      # 1. Клонируем ваш код из репозитория
+      - name: Get the code
+        uses: actions/checkout@v7
+
+      # 2. Устанавливаем GO
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true # Автоматическое кэширование модулей
+
+      # 3. Быстрая проверка go vet (fail fast)
+      - name: Vet
+        run: go vet ./...
+
+      # 4. Полный анализ golangci-lint
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12.0
+          args: --timeout=5m
+
+      # 5. Скачиваем зависимости (go.mod)
+      - name: Скачиваем зависимости
+        run: go mod download
+
+      # 6. Запускаем тесты с проверкой на гонки (race detector)
+      - name: Запускаем тесты
+        run: go test -race -coverprofile=coverage.out ./...
+
+      # 6. (Опционально) Проверяем покрытие кода (если меньше 80% — падаем)
+      - name: Проверяем покрытие
+        run: |
+          go tool cover -func=coverage.out | grep total | awk '{print $3}'
+
+      
+
+      - name: Test
+        run: go test ./... -race -coverprofile=coverage.out -covermode=atomic
+
+      # Опционально: Залить покрытие в Codecov или SonarQube
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage.out

@@ -2,11 +2,11 @@ package repositories
 
 import "github.com/mathbdw/subscription-service/internal/domain/entities"
 
-// SubscriptionToMap - convert struct Subscription to map
+// SubscriptionToMap - convert struct Subscription to map.
 func SubscriptionToMap(subs entities.Subscription) map[string]any {
 	data := map[string]any{
 		"service_name": subs.ServiceName,
-		"user_id":      subs.UserId,
+		"user_id":      subs.UserID,
 		"price":        subs.Price,
 		"start_date":   subs.StartDate,
 	}

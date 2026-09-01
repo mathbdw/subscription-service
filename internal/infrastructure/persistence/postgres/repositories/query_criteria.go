@@ -5,18 +5,18 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	
+
 	"github.com/mathbdw/subscription-service/internal/domain/entities"
 )
 
-// conditionList - SelectBuilder query condition builder for list
+// conditionList - SelectBuilder query condition builder for list.
 func conditionList(query sq.SelectBuilder, params entities.FilterParams) sq.SelectBuilder {
 	if params.ServiceName != "" {
 		query = query.Where(sq.Like{"service_name": params.ServiceName})
 	}
 
-	if params.UserId != uuid.Nil{
-		query = query.Where(sq.Eq{"user_id": params.UserId})
+	if params.UserID != uuid.Nil {
+		query = query.Where(sq.Eq{"user_id": params.UserID})
 	}
 
 	if params.StartDate.From != nil {
@@ -30,7 +30,7 @@ func conditionList(query sq.SelectBuilder, params entities.FilterParams) sq.Sele
 	return query
 }
 
-// paginationList - SelectBuilder query pagination builder for list
+// paginationList - SelectBuilder query pagination builder for list.
 func paginationList(query sq.SelectBuilder, totalCount uint64, params *entities.PaginationParams) sq.SelectBuilder {
 	limit := params.Limit
 	page := params.Page
@@ -48,7 +48,7 @@ func paginationList(query sq.SelectBuilder, totalCount uint64, params *entities.
 	return query
 }
 
-// sortList - SelectBuilder query sort builder
+// sortList - SelectBuilder query sort builder.
 func sortList(query sq.SelectBuilder, params entities.SortParams) sq.SelectBuilder {
 	if params.SortBy == "" {
 		return query
@@ -57,14 +57,14 @@ func sortList(query sq.SelectBuilder, params entities.SortParams) sq.SelectBuild
 	return query.OrderBy(fmt.Sprintf("%s %s", params.SortBy, params.SortOrder))
 }
 
-// conditionCost - SelectBuilder query condition builder for cost
+// conditionCost - SelectBuilder query condition builder for cost.
 func conditionCost(query sq.SelectBuilder, params entities.FilterParams) sq.SelectBuilder {
 	if params.ServiceName != "" {
 		query = query.Where(sq.Eq{"service_name": params.ServiceName})
 	}
 
-	if params.UserId != uuid.Nil{
-		query = query.Where(sq.Eq{"user_id": params.UserId})
+	if params.UserID != uuid.Nil {
+		query = query.Where(sq.Eq{"user_id": params.UserID})
 	}
 
 	if params.StartDate.From != nil {

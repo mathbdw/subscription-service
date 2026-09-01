@@ -1,22 +1,104 @@
-# Binaries for programs and plugins
-/bin/
-
-# Test binary, built with `go test -c`
+# ============================================
+# БИНАРНИКИ И АРТЕФАКТЫ
+# ============================================
+/app
+/subscription-service
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 *.test
-
-# Code coverage profiles and other test artifacts
 *.out
-coverage.*
+*.prof
+/bin/
+/dist/
+/build/
+/tmp/
+
+# ============================================
+# ОТЧЕТЫ О ПОКРЫТИИ
+# ============================================
+coverage.out
+coverage.html
 *.coverprofile
-profile.cov
+*.cov
+*.lcov
 
-# Go workspace file
-go.mod
-go.sum
-
-# env file
-.env
-
-# Editor/IDE
-.idea/
+# ============================================
+# IDE И РЕДАКТОРЫ
+# ============================================
 .vscode/
+!.vscode/extensions.json
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+
+# ============================================
+# ЛОГИ И ВРЕМЕННЫЕ ФАЙЛЫ
+# ============================================
+*.log
+logs/
+*.pid
+tmp/
+temp/
+
+# ============================================
+# ФАЙЛЫ ОС
+# ============================================
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.directory
+
+# ============================================
+# СЕКРЕТЫ И КОНФИГИ
+# ============================================
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.crt
+config/local.yaml
+config/*.local.yaml
+secrets/
+
+# ============================================
+# GO-СПЕЦИФИЧНЫЕ
+# ============================================
+# vendor/  # Если используете vendor, то коммитят!
+*.mod
+*.work
+**/*_mock.go
+**/*.pb.go
+**/*.gen.go
+
+# ============================================
+# DOCKER
+# ============================================
+.dockerignore
+Dockerfile.*.local
+*.tar
+*.img
+
+# ============================================
+# ИНСТРУМЕНТЫ
+# ============================================
+.golangci.yml.local
+.pre-commit-config.local.yaml
+.terraform/
+*.tfstate
+
+# ============================================
+# КЕШИ
+# ============================================
+.cache/
+*.cache

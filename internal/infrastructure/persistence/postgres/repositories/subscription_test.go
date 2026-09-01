@@ -24,7 +24,7 @@ import (
 
 var subTest = entities.Subscription{
 	ServiceName: "test service",
-	UserId:      uuid.New(),
+	UserID:      uuid.New(),
 	Price:       100,
 	StartDate:   time.Now(),
 }
@@ -32,7 +32,9 @@ var subTest = entities.Subscription{
 func TestUser_Create_ErrorBuilder(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -42,13 +44,13 @@ func TestUser_Create_ErrorBuilder(t *testing.T) {
 	ctx := context.Background()
 
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO (price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4)")).
-		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserId).
+		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID).
 		WillReturnError(errors.New("build query"))
 
 	table = ""
 	err = repo.Create(ctx, entities.Subscription{
 		ServiceName: subTest.ServiceName,
-		UserId:      subTest.UserId,
+		UserID:      subTest.UserID,
 		Price:       subTest.Price,
 		StartDate:   subTest.StartDate,
 		EndDate:     subTest.EndDate,
@@ -61,7 +63,9 @@ func TestUser_Create_ErrorBuilder(t *testing.T) {
 func TestUser_Create_ErrorExec(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -71,13 +75,13 @@ func TestUser_Create_ErrorExec(t *testing.T) {
 	ctx := context.Background()
 
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO subscription (price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4)")).
-		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserId).
+		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID).
 		WillReturnError(sql.ErrNoRows)
 
 	table = "subscription"
 	err = repo.Create(ctx, entities.Subscription{
 		ServiceName: subTest.ServiceName,
-		UserId:      subTest.UserId,
+		UserID:      subTest.UserID,
 		Price:       subTest.Price,
 		StartDate:   subTest.StartDate,
 		EndDate:     subTest.EndDate,
@@ -102,7 +106,9 @@ func (r *ErrorResult) RowsAffected() (int64, error) {
 func TestUser_Create_ErrorAffectedRows(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -112,12 +118,12 @@ func TestUser_Create_ErrorAffectedRows(t *testing.T) {
 	ctx := context.Background()
 
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO subscription (price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4)")).
-		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserId).
+		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID).
 		WillReturnResult(&ErrorResult{})
 
 	err = repo.Create(ctx, entities.Subscription{
 		ServiceName: subTest.ServiceName,
-		UserId:      subTest.UserId,
+		UserID:      subTest.UserID,
 		Price:       subTest.Price,
 		StartDate:   subTest.StartDate,
 		EndDate:     subTest.EndDate,
@@ -131,7 +137,9 @@ func TestUser_Create_ErrorAffectedRows(t *testing.T) {
 func TestUser_Create_ErrorNotEquilRowsAffected(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -141,12 +149,12 @@ func TestUser_Create_ErrorNotEquilRowsAffected(t *testing.T) {
 	ctx := context.Background()
 
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO subscription (price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4)")).
-		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserId).
+		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
 	err = repo.Create(ctx, entities.Subscription{
 		ServiceName: subTest.ServiceName,
-		UserId:      subTest.UserId,
+		UserID:      subTest.UserID,
 		Price:       subTest.Price,
 		StartDate:   subTest.StartDate,
 		EndDate:     subTest.EndDate,
@@ -160,7 +168,9 @@ func TestUser_Create_ErrorNotEquilRowsAffected(t *testing.T) {
 func TestUser_Create_Success(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -174,18 +184,18 @@ func TestUser_Create_Success(t *testing.T) {
 		name    string
 		endTime sql.NullTime
 		query   string
-		args []driver.Value
+		args    []driver.Value
 	}{
 		{
 			name:  "withoutEndTime",
 			query: "INSERT INTO subscription (price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4)",
-			args:  []driver.Value{subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserId},
+			args:  []driver.Value{subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID},
 		},
 		// {
 		// 	name:    "withEndTime",
 		// 	query:   "INSERT INTO subscription (end_date,price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4,$5)",
 		// 	endTime: endTime,
-		// 	args:  []driver.Value{endTime.Time, subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserId},
+		// 	args:  []driver.Value{endTime.Time, subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID},
 		// },
 	}
 	for _, tt := range tests {
@@ -196,7 +206,7 @@ func TestUser_Create_Success(t *testing.T) {
 
 			err = repo.Create(ctx, entities.Subscription{
 				ServiceName: subTest.ServiceName,
-				UserId:      subTest.UserId,
+				UserID:      subTest.UserID,
 				Price:       subTest.Price,
 				StartDate:   subTest.StartDate,
 				EndDate:     tt.endTime,
@@ -211,7 +221,9 @@ func TestUser_Create_Success(t *testing.T) {
 func TestUser_GetByID_ErrorBuilder(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -235,7 +247,9 @@ func TestUser_GetByID_ErrorBuilder(t *testing.T) {
 func TestUser_GetByID_ErrorScan(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -260,7 +274,9 @@ func TestUser_GetByID_ErrorScan(t *testing.T) {
 func TestUser_GetByID_Success(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -273,7 +289,7 @@ func TestUser_GetByID_Success(t *testing.T) {
 		WithArgs(subTest.ID).
 		WillReturnRows(
 			sqlmock.NewRows([]string{"id", "service_name", "user_id", "price", "start_date", "end_date"}).
-				AddRow(subTest.ID, subTest.ServiceName, subTest.UserId, subTest.Price, subTest.StartDate, subTest.EndDate),
+				AddRow(subTest.ID, subTest.ServiceName, subTest.UserID, subTest.Price, subTest.StartDate, subTest.EndDate),
 		)
 
 	model, err := repo.GetByID(ctx, subTest.ID)
@@ -282,7 +298,7 @@ func TestUser_GetByID_Success(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, subTest.ID, model.ID)
 	assert.Equal(t, subTest.ServiceName, model.ServiceName)
-	assert.Equal(t, subTest.UserId, model.UserId)
+	assert.Equal(t, subTest.UserID, model.UserID)
 	assert.Equal(t, subTest.Price, model.Price)
 	assert.Equal(t, subTest.StartDate, model.StartDate)
 	assert.Equal(t, subTest.EndDate, model.EndDate)
@@ -291,7 +307,9 @@ func TestUser_GetByID_Success(t *testing.T) {
 func TestUser_List_ErrorBuildQueryCount(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -315,7 +333,9 @@ func TestUser_List_ErrorBuildQueryCount(t *testing.T) {
 func TestUser_List_ErrorScanQueryCount(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -340,7 +360,9 @@ func TestUser_List_ErrorScanQueryCount(t *testing.T) {
 func TestUser_List_ErrorBuildQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -375,7 +397,9 @@ func TestUser_List_ErrorBuildQuery(t *testing.T) {
 func TestUser_List_ErrorGetQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -410,7 +434,9 @@ func TestUser_List_ErrorGetQuery(t *testing.T) {
 func TestUser_List_ErrorScanQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -433,7 +459,7 @@ func TestUser_List_ErrorScanQuery(t *testing.T) {
 	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, service_name, user_id, price, start_date, end_date FROM subscription LIMIT %d OFFSET %d", limit, offset))).
 		WithoutArgs().
 		WillReturnRows(mock.NewRows([]string{"id", "service_name", "user_id", "price", "start_date", "end_date"}).
-			AddRow("", subTest.ServiceName, subTest.UserId, subTest.Price, subTest.StartDate, subTest.EndDate),
+			AddRow("", subTest.ServiceName, subTest.UserID, subTest.Price, subTest.StartDate, subTest.EndDate),
 		)
 
 	respSubs, err := repo.List(ctx, qc)
@@ -446,7 +472,9 @@ func TestUser_List_ErrorScanQuery(t *testing.T) {
 func TestUser_List_ErrorIterationQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -467,11 +495,11 @@ func TestUser_List_ErrorIterationQuery(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"COUNT(*)"}).AddRow(uint64(10)))
 
 	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, service_name, user_id, price, start_date, end_date FROM subscription LIMIT %d OFFSET %d", limit, offset))).
-	WithoutArgs().
-	WillReturnRows(mock.NewRows([]string{"id", "service_name", "user_id", "price", "start_date", "end_date"}).
-		AddRow(subTest.ID, subTest.ServiceName, subTest.UserId, subTest.Price, subTest.StartDate, subTest.EndDate).
-		RowError(0, errors.New("network error")),
-	)
+		WithoutArgs().
+		WillReturnRows(mock.NewRows([]string{"id", "service_name", "user_id", "price", "start_date", "end_date"}).
+			AddRow(subTest.ID, subTest.ServiceName, subTest.UserID, subTest.Price, subTest.StartDate, subTest.EndDate).
+			RowError(0, errors.New("network error")),
+		)
 
 	respSubs, err := repo.List(ctx, qc)
 
@@ -483,7 +511,9 @@ func TestUser_List_ErrorIterationQuery(t *testing.T) {
 func TestUser_List_Success(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -506,10 +536,10 @@ func TestUser_List_Success(t *testing.T) {
 	//totalCount >
 	limit--
 	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, service_name, user_id, price, start_date, end_date FROM subscription LIMIT %d OFFSET %d", limit, offset))).
-	WithoutArgs().
-	WillReturnRows(mock.NewRows([]string{"id", "service_name", "user_id", "price", "start_date", "end_date"}).
-		AddRow(subTest.ID, subTest.ServiceName, subTest.UserId, subTest.Price, subTest.StartDate, subTest.EndDate),
-	)
+		WithoutArgs().
+		WillReturnRows(mock.NewRows([]string{"id", "service_name", "user_id", "price", "start_date", "end_date"}).
+			AddRow(subTest.ID, subTest.ServiceName, subTest.UserID, subTest.Price, subTest.StartDate, subTest.EndDate),
+		)
 
 	respSubs, err := repo.List(ctx, qc)
 
@@ -524,7 +554,9 @@ var fieldsUpdate = map[string]any{
 func TestUser_Update_ValidateFalse(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -533,7 +565,7 @@ func TestUser_Update_ValidateFalse(t *testing.T) {
 	repo := NewUserRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
-	logger.EXPECT().Error(gomock.Any(),gomock.Any())
+	logger.EXPECT().Error(gomock.Any(), gomock.Any())
 
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE subscription SET service_name = $1, updated_at = $2 WHERE id = $3")).
 		WithArgs(fieldsUpdate["service_name"], sqlmock.AnyArg(), subTest.ID).
@@ -551,7 +583,9 @@ func TestUser_Update_ValidateFalse(t *testing.T) {
 func TestUser_Update_ErrorBuildQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -574,7 +608,9 @@ func TestUser_Update_ErrorBuildQuery(t *testing.T) {
 func TestUser_Update_ErrorExecQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -597,7 +633,9 @@ func TestUser_Update_ErrorExecQuery(t *testing.T) {
 func TestUser_Update_ErrorAffectedRows(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -619,7 +657,9 @@ func TestUser_Update_ErrorAffectedRows(t *testing.T) {
 func TestUser_Update_ErrorNotEquilRowsAffected(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -642,7 +682,9 @@ func TestUser_Update_ErrorNotEquilRowsAffected(t *testing.T) {
 func TestUser_Update_Success(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -664,7 +706,9 @@ func TestUser_Update_Success(t *testing.T) {
 func TestUser_Delete_ErrorBuildQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -687,7 +731,9 @@ func TestUser_Delete_ErrorBuildQuery(t *testing.T) {
 func TestUser_Delete_ErrorExecQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -711,7 +757,9 @@ func TestUser_Delete_ErrorExecQuery(t *testing.T) {
 func TestUser_Delete_ErrorAffectedRows(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -734,7 +782,9 @@ func TestUser_Delete_ErrorAffectedRows(t *testing.T) {
 func TestUser_Delete_ErrorNotEquilRowsAffected(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -757,7 +807,9 @@ func TestUser_Delete_ErrorNotEquilRowsAffected(t *testing.T) {
 func TestUser_Delete_Success(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -778,7 +830,9 @@ func TestUser_Delete_Success(t *testing.T) {
 func TestUser_GetCost_ErrorBuildQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -802,7 +856,9 @@ func TestUser_GetCost_ErrorBuildQuery(t *testing.T) {
 func TestUser_GetCost_ErrorScan(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
@@ -828,7 +884,9 @@ func TestUser_GetCost_ErrorScan(t *testing.T) {
 func TestUser_GetCost_Success(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
-	defer mockDB.Close()
+	defer func() {
+		_ = mockDB.Close()
+	}()
 
 	ctrl := gomock.NewController(t)
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")

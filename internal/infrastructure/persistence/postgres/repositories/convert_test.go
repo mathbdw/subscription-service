@@ -6,31 +6,32 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/mathbdw/subscription-service/internal/domain/entities"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mathbdw/subscription-service/internal/domain/entities"
 )
 
 func TestUser_SubscriptionToMap(t *testing.T) {
 	subsTest := entities.Subscription{
 		ServiceName: "test service",
-		UserId:      uuid.New(),
+		UserID:      uuid.New(),
 		Price:       100,
 		StartDate:   time.Now(),
 	}
 
 	tests := []struct {
-		name    string
-		endTime sql.NullTime
+		name      string
+		endTime   sql.NullTime
 		expectLen int
 	}{
 		{
-			name:  "withoutEndTime",
+			name:      "withoutEndTime",
 			expectLen: 4,
 		},
 		{
-			name:    "withEndTime",
+			name:      "withEndTime",
 			expectLen: 5,
-			endTime: sql.NullTime{Time: time.Now(), Valid: true},
+			endTime:   sql.NullTime{Time: time.Now(), Valid: true},
 		},
 	}
 	for _, tt := range tests {
