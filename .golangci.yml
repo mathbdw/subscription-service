@@ -177,7 +177,7 @@ formatters:
     # ----- Настройка goimports -----
     goimports:
       # Префикс вашего проекта (чтобы выделить локальные пакеты в отдельную группу)
-      local-prefixes: "github.com/mathbdw/subscription-service"
+      local-prefixes: ["github.com/mathbdw/subscription-service"]
     
     # ----- Настройка gci (более мощный, чем goimports) -----
     gci:
@@ -190,9 +190,6 @@ formatters:
         - prefix(github.com/mathbdw/subscription-service)  # 3. Локальные пакеты (ваш проект)
         - blank                   # 4. Импорты с _ (например, _ "github.com/lib/pq")
         - dot                     # 5. Импорты с . (например, . "testing")
-      # Включаем проверку порядка импортов в тестах
-      skip-generated: false
-      no-inline-sort: false
     
     # ----- Настройка gofmt -----
     gofmt:
@@ -224,9 +221,6 @@ run:
   
   # Тесты включены (проверяем и тесты тоже)
   tests: true
-  
-  # Не использовать стандартные исключения для тестов (проверяем всё)
-  skip-test-files: false
-  
+
   # Версия Go, для которой проверяется совместимость
   go: "1.24"
