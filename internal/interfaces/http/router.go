@@ -6,11 +6,12 @@ import (
 	"github.com/gofiber/swagger"
 
 	"github.com/mathbdw/subscription-service/config"
-	_ "github.com/mathbdw/subscription-service/docs/swagger" // Swagger docs.
 	v1 "github.com/mathbdw/subscription-service/internal/interfaces/http/handlers/api/v1"
 	"github.com/mathbdw/subscription-service/internal/interfaces/http/middleware"
 	"github.com/mathbdw/subscription-service/internal/interfaces/observability"
 	uc "github.com/mathbdw/subscription-service/internal/usecases/subscription"
+
+	_ "github.com/mathbdw/subscription-service/docs/swagger" // Swagger docs.
 )
 
 // NewRouter -.

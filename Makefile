@@ -32,7 +32,7 @@ fmt: ## Форматирование кода
 	@echo "📝 Formatting code..."
 	go fmt ./...
 	goimports -w .
-	gci write -s standard -s default -s "prefix(github.com/mathbdw/subscription-service)" .
+	gci write -s standard -s default -s "prefix(github.com/mathbdw/subscription-service)" -s blank -s dot .
 	@echo "✅ Formatting complete!"
 
 .PHONY: vet

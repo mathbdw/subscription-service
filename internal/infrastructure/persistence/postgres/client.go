@@ -4,10 +4,11 @@ import (
 	"time"
 
 	"github.com/Masterminds/squirrel"
-	_ "github.com/jackc/pgx/v5/stdlib" // Регистрация драйвера pgx в database/sql
 	"github.com/jmoiron/sqlx"
 
 	"github.com/mathbdw/subscription-service/internal/interfaces/observability"
+
+	_ "github.com/jackc/pgx/v5/stdlib" // Регистрация драйвера pgx в database/sql
 )
 
 var sqlxOpen = sqlx.Open
