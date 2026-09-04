@@ -55,7 +55,7 @@ jobs:
           cache: true
 
       - name: Test
-        run: go test ./... -race -coverprofile=coverage.out -covermode=atomic
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
 
       # (Опционально) Проверяем покрытие кода (если меньше 80% — падаем)
       - name: Проверяем покрытие
