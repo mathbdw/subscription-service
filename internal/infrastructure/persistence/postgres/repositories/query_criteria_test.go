@@ -20,6 +20,7 @@ func init() {
 }
 
 func TestQueryCriteria_ConditionList(t *testing.T) {
+	t.Parallel()
 	build := builder.Select("*").From("test")
 
 	from := time.Date(2020, time.January, 15, 14, 30, 0, 0, time.UTC)
@@ -33,14 +34,15 @@ func TestQueryCriteria_ConditionList(t *testing.T) {
 	build = conditionList(build, filter)
 
 	sql, _, err := build.ToSql()
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "SELECT * FROM test WHERE service_name LIKE $1 AND user_id = $2 AND start_date >= $3 AND start_date <= $4", sql)
 }
 
 func TestQueryCriteria_PaginationList(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
-		expectedSql   string
+		expectedSQL   string
 		expectedPage  uint64
 		expectedLimit uint64
 		totalCount    uint64
@@ -48,7 +50,7 @@ func TestQueryCriteria_PaginationList(t *testing.T) {
 	}{
 		{
 			name:          "first_page_no_full",
-			expectedSql:   "SELECT * FROM test LIMIT 13 OFFSET 0",
+			expectedSQL:   "SELECT * FROM test LIMIT 13 OFFSET 0",
 			expectedPage:  1,
 			expectedLimit: 13,
 			totalCount:    13,
@@ -56,7 +58,7 @@ func TestQueryCriteria_PaginationList(t *testing.T) {
 		},
 		{
 			name:          "page_gte_total",
-			expectedSql:   "SELECT * FROM test LIMIT 13 OFFSET 0",
+			expectedSQL:   "SELECT * FROM test LIMIT 13 OFFSET 0",
 			expectedPage:  1,
 			expectedLimit: 13,
 			totalCount:    13,
@@ -64,7 +66,7 @@ func TestQueryCriteria_PaginationList(t *testing.T) {
 		},
 		{
 			name:          "first_page_full",
-			expectedSql:   "SELECT * FROM test LIMIT 20 OFFSET 0",
+			expectedSQL:   "SELECT * FROM test LIMIT 20 OFFSET 0",
 			expectedPage:  1,
 			expectedLimit: 20,
 			totalCount:    23,
@@ -72,7 +74,7 @@ func TestQueryCriteria_PaginationList(t *testing.T) {
 		},
 		{
 			name:          "page_middle_total",
-			expectedSql:   "SELECT * FROM test LIMIT 20 OFFSET 20",
+			expectedSQL:   "SELECT * FROM test LIMIT 20 OFFSET 20",
 			expectedPage:  2,
 			expectedLimit: 20,
 			totalCount:    68,
@@ -80,7 +82,7 @@ func TestQueryCriteria_PaginationList(t *testing.T) {
 		},
 		{
 			name:          "page_eq_total",
-			expectedSql:   "SELECT * FROM test LIMIT 20 OFFSET 40",
+			expectedSQL:   "SELECT * FROM test LIMIT 20 OFFSET 40",
 			expectedPage:  3,
 			expectedLimit: 20,
 			totalCount:    60,
@@ -91,12 +93,13 @@ func TestQueryCriteria_PaginationList(t *testing.T) {
 	query := builder.Select("*").From("test")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			tmpQuery := paginationList(query, tt.totalCount, tt.params)
 
 			sql, _, err := tmpQuery.ToSql()
 
 			require.NoError(t, err)
-			assert.Equal(t, tt.expectedSql, sql)
+			assert.Equal(t, tt.expectedSQL, sql)
 			assert.Equal(t, tt.expectedPage, tt.params.Page)
 			assert.Equal(t, tt.expectedLimit, tt.params.Limit)
 		})
@@ -104,6 +107,7 @@ func TestQueryCriteria_PaginationList(t *testing.T) {
 }
 
 func TestQueryCriteria_SortListEmpty(t *testing.T) {
+	t.Parallel()
 	build := builder.Select("*").From("test")
 
 	params := entities.SortParams{}
@@ -116,6 +120,7 @@ func TestQueryCriteria_SortListEmpty(t *testing.T) {
 }
 
 func TestQueryCriteria_SortList(t *testing.T) {
+	t.Parallel()
 	build := builder.Select("*").From("test")
 
 	params := entities.SortParams{
@@ -132,6 +137,7 @@ func TestQueryCriteria_SortList(t *testing.T) {
 }
 
 func TestQueryCriteria_ConditionCost(t *testing.T) {
+	t.Parallel()
 	from := time.Date(2020, time.January, 15, 14, 30, 0, 0, time.UTC)
 	to := time.Date(2020, time.January, 15, 15, 30, 0, 0, time.UTC)
 
@@ -140,48 +146,59 @@ func TestQueryCriteria_ConditionCost(t *testing.T) {
 	startDate := entities.DateRange{From: &from}
 	fullDate := entities.DateRange{From: &from, To: &to}
 
-	filter := entities.FilterParams{}
-
 	tests := []struct {
 		name           string
-		fn             func()
+		filter         entities.FilterParams
 		exepectedQuery string
 	}{
 		{
 			name:           "empty",
-			fn:             func() {},
+			filter:         entities.FilterParams{},
 			exepectedQuery: "SELECT * FROM test",
 		},
 		{
-			name:           "WithServiceName",
-			fn:             func() { filter.ServiceName = serviceName },
+			name: "WithServiceName",
+			filter: entities.FilterParams{
+				ServiceName: serviceName,
+			},
 			exepectedQuery: "SELECT * FROM test WHERE service_name = $1",
 		},
 		{
-			name:           "WithServiceNameUserID",
-			fn:             func() { filter.UserID = userID },
+			name: "WithServiceNameUserID",
+			filter: entities.FilterParams{
+				ServiceName: serviceName,
+				UserID:      userID,
+			},
 			exepectedQuery: "SELECT * FROM test WHERE service_name = $1 AND user_id = $2",
 		},
 		{
-			name:           "WithServiceNameUserIDDateFrom",
-			fn:             func() { filter.StartDate = startDate },
+			name: "WithServiceNameUserIDDateFrom",
+			filter: entities.FilterParams{
+				ServiceName: serviceName,
+				UserID:      userID,
+				StartDate:   startDate,
+			},
 			exepectedQuery: "SELECT * FROM test WHERE service_name = $1 AND user_id = $2 AND start_date >= $3",
 		},
 		{
-			name:           "WithServiceNameUserIDDateFromDateTo",
-			fn:             func() { filter.StartDate = fullDate },
+			name: "WithServiceNameUserIDDateFromDateTo",
+			filter: entities.FilterParams{
+				ServiceName: serviceName,
+				UserID:      userID,
+				StartDate:   fullDate,
+			},
 			exepectedQuery: "SELECT * FROM test WHERE service_name = $1 AND user_id = $2 AND start_date >= $3 AND start_date <= $4",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.fn()
+			t.Parallel()
 			build := builder.Select("*").From("test")
-			build = conditionCost(build, filter)
+			build = conditionCost(build, tt.filter)
 			sql, _, err := build.ToSql()
 
-			require.Nil(t, err)
+			require.NoError(t, err)
 			require.Equal(t, tt.exepectedQuery, sql)
 		})
 	}

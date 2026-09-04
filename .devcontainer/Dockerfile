@@ -10,4 +10,8 @@ RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.0 && \
 
 WORKDIR /workspace
 
+RUN adduser -D vscode
+RUN chown -R vscode:vscode /workspace
+USER vscode
+
 ENTRYPOINT [ "sleep", "infinity" ]

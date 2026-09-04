@@ -10,12 +10,14 @@ on:
 # Определим переменные окружения для кэша Go
 env:
   GO_VERSION: '1.24'
+  REGISTRY: ghcr.io  # GitHub Container Registry
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   # Джоба проверки качества кода
   lint:
     name: Lint and Vet
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       # 1. Клонируем ваш код из репозитория
       - name: Get the code
@@ -39,26 +41,70 @@ jobs:
           version: v2.12.0
           args: --timeout=5m
 
-      # 5. Скачиваем зависимости (go.mod)
-      - name: Скачиваем зависимости
-        run: go mod download
+  # Джоба тестирования
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
 
-      # 6. Запускаем тесты с проверкой на гонки (race detector)
-      - name: Запускаем тесты
-        run: go test -race -coverprofile=coverage.out ./...
-
-      # 6. (Опционально) Проверяем покрытие кода (если меньше 80% — падаем)
-      - name: Проверяем покрытие
-        run: |
-          go tool cover -func=coverage.out | grep total | awk '{print $3}'
-
-      
+      - name: Set up Go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
 
       - name: Test
         run: go test ./... -race -coverprofile=coverage.out -covermode=atomic
 
+      # (Опционально) Проверяем покрытие кода (если меньше 80% — падаем)
+      - name: Проверяем покрытие
+        run: |
+          go tool cover -func=coverage.out | grep total | awk '{print $3}' | awk -F'%' '{if ($1 < 80) exit 1}'
+
       # Опционально: Залить покрытие в Codecov или SonarQube
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
+      # - name: Upload coverage
+      #   uses: codecov/codecov-action@v3
+      #   with:
+      #     files: coverage.out
+
+   # НОВАЯ ДЖОБА: Сборка Docker-образа
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-24.04
+    needs: [lint, test]  # Запускаем только после успешных тестов
+    # Собираем только для master ветки
+    if: github.ref == 'refs/heads/master'
+    
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Вход в GitHub Container Registry
+      - name: Login to GHCR
+        uses: docker/login-action@v3
         with:
-          files: coverage.out
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Настройка Buildx для multi-platform сборки
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Сборка и пуш образа
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./deploy/Dockerfile  # Указываем наш production Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

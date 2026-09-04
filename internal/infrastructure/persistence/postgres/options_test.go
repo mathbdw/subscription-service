@@ -11,6 +11,7 @@ import (
 )
 
 func TestDriver(t *testing.T) {
+	t.Parallel()
 	pg := &Postgres{}
 	opt := Driver("driver")
 	opt(pg)
@@ -19,6 +20,7 @@ func TestDriver(t *testing.T) {
 }
 
 func TestDsn(t *testing.T) {
+	t.Parallel()
 	db := config.Database{
 		Host:     "test",
 		Port:     1,
@@ -44,6 +46,7 @@ func TestDsn(t *testing.T) {
 }
 
 func TestMaxOpenConns(t *testing.T) {
+	t.Parallel()
 	pg := &Postgres{}
 	opt := MaxOpenConns(1)
 	opt(pg)
@@ -52,6 +55,7 @@ func TestMaxOpenConns(t *testing.T) {
 }
 
 func TestMaxIdleConns(t *testing.T) {
+	t.Parallel()
 	pg := &Postgres{}
 	opt := MaxIdleConns(1)
 	opt(pg)
@@ -60,6 +64,7 @@ func TestMaxIdleConns(t *testing.T) {
 }
 
 func TestConnMaxIdleTime(t *testing.T) {
+	t.Parallel()
 	timeSecond := time.Second
 	pg := &Postgres{}
 	opt := ConnMaxIdleTime(timeSecond)
@@ -69,6 +74,7 @@ func TestConnMaxIdleTime(t *testing.T) {
 }
 
 func TestConnMaxLifetime(t *testing.T) {
+	t.Parallel()
 	timeSecond := time.Second
 	pg := &Postgres{}
 	opt := ConnMaxLifetime(timeSecond)

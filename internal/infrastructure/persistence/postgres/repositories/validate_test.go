@@ -7,6 +7,7 @@ import (
 )
 
 func TestValidate_UpdateFields(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name                string
 		expectedError       bool
@@ -41,6 +42,7 @@ func TestValidate_UpdateFields(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := validateUpdateFields(tt.fields)
 
 			if tt.expectedError {

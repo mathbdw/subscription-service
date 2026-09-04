@@ -10,15 +10,18 @@ import (
 )
 
 func TestReadConfigYML_FileErrors(t *testing.T) {
+	t.Parallel()
 	t.Run("file not found", func(t *testing.T) {
+		t.Parallel()
 		cfg, err := ReadConfigYML("/non/existent/path/config.yaml")
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, cfg)
 		assert.Contains(t, err.Error(), "no such file or directory")
 	})
 
 	t.Run("permission denied", func(t *testing.T) {
+		t.Parallel()
 		if os.Getuid() == 0 {
 			t.Skip("Skipping permission test when running as root")
 		}
@@ -32,13 +35,14 @@ func TestReadConfigYML_FileErrors(t *testing.T) {
 
 		cfg, err := ReadConfigYML(filePath)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, cfg)
 		assert.Contains(t, err.Error(), "permission denied")
 	})
 }
 
 func TestReadConfigYML_DecodeErrors(t *testing.T) {
+	t.Parallel()
 	invalidYAML := `
 project:
   name: "test"
@@ -49,17 +53,18 @@ invalid yaml content here
 	tmpDir := t.TempDir()
 	filePath := filepath.Join(tmpDir, "config.yaml")
 
-	err := os.WriteFile(filePath, []byte(invalidYAML), 0644)
+	err := os.WriteFile(filePath, []byte(invalidYAML), 0600)
 	require.NoError(t, err)
 
 	cfg, err := ReadConfigYML(filePath)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, cfg)
 	assert.Contains(t, err.Error(), "yaml:")
 }
 
 func TestReadConfigYML_Success(t *testing.T) {
+	t.Parallel()
 	// Создаем временный YAML файл
 	yamlContent := `
 project:
@@ -83,7 +88,7 @@ status:
 	tmpDir := t.TempDir()
 	filePath := filepath.Join(tmpDir, "config.yaml")
 
-	err := os.WriteFile(filePath, []byte(yamlContent), 0644)
+	err := os.WriteFile(filePath, []byte(yamlContent), 0600)
 	require.NoError(t, err)
 
 	// Вызываем тестируемую функцию

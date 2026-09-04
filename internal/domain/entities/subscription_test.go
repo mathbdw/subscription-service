@@ -9,6 +9,7 @@ import (
 )
 
 func TestSubscription_IsString(t *testing.T) {
+	t.Parallel()
 	dataSt := "test"
 
 	res := isString(dataSt)
@@ -17,6 +18,7 @@ func TestSubscription_IsString(t *testing.T) {
 }
 
 func TestSubscription_IsUUID(t *testing.T) {
+	t.Parallel()
 	dataUUID := uuid.New()
 
 	res := isUUID(dataUUID)
@@ -25,6 +27,7 @@ func TestSubscription_IsUUID(t *testing.T) {
 }
 
 func TestSubscription_IsUint32(t *testing.T) {
+	t.Parallel()
 	dataUint32 := uint32(1)
 
 	res := isUint32(dataUint32)
@@ -33,6 +36,7 @@ func TestSubscription_IsUint32(t *testing.T) {
 }
 
 func TestSubscription_IsTime(t *testing.T) {
+	t.Parallel()
 	dataTime := time.Now()
 
 	res := isTime(dataTime)

@@ -9,6 +9,7 @@ import (
 )
 
 func TestOption_Address(t *testing.T) {
+	t.Parallel()
 	h := "localhost"
 	p := uint16(1111)
 
@@ -20,14 +21,16 @@ func TestOption_Address(t *testing.T) {
 }
 
 func TestOption_Prefork(t *testing.T) {
+	t.Parallel()
 	s := &Server{}
 	opt := Prefork(true)
 	opt(s)
 
-	require.Equal(t, true, s.prefork)
+	require.True(t, s.prefork)
 }
 
 func TestOption_ReadTimeout(t *testing.T) {
+	t.Parallel()
 	tm := 5 * time.Second
 	s := &Server{}
 	opt := ReadTimeout(tm)
@@ -37,6 +40,7 @@ func TestOption_ReadTimeout(t *testing.T) {
 }
 
 func TestOption_WriteTimeout(t *testing.T) {
+	t.Parallel()
 	tm := 5 * time.Second
 	s := &Server{}
 	opt := WriteTimeout(tm)
@@ -46,6 +50,7 @@ func TestOption_WriteTimeout(t *testing.T) {
 }
 
 func TestOption_ShutdownTimeout(t *testing.T) {
+	t.Parallel()
 	tm := 5 * time.Second
 	s := &Server{}
 	opt := ShutdownTimeout(tm)

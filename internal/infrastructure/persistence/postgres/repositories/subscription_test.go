@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 	"fmt"
 	"regexp"
 	"testing"
@@ -29,6 +28,15 @@ var subTest = entities.Subscription{
 	StartDate:   time.Now(),
 }
 
+func setVar() {
+	table = "subscription"
+	columnsSelect = []string{"id", "service_name", "user_id", "price", "start_date", "end_date"}
+	columnsSelectCount = []string{"COUNT(*)"}
+	columnsCost = []string{"COALESCE(SUM(price), 0)"}
+}
+
+// Modifies the global variable table, so it cannot be executed in parallel.
+// nolint:paralleltest
 func TestUser_Create_ErrorBuilder(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
@@ -61,6 +69,7 @@ func TestUser_Create_ErrorBuilder(t *testing.T) {
 }
 
 func TestUser_Create_ErrorExec(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -78,7 +87,7 @@ func TestUser_Create_ErrorExec(t *testing.T) {
 		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID).
 		WillReturnError(sql.ErrNoRows)
 
-	table = "subscription"
+	setVar()
 	err = repo.Create(ctx, entities.Subscription{
 		ServiceName: subTest.ServiceName,
 		UserID:      subTest.UserID,
@@ -92,7 +101,7 @@ func TestUser_Create_ErrorExec(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-// Create custom ErrorResult
+// Create custom ErrorResult.
 type ErrorResult struct{}
 
 func (r *ErrorResult) LastInsertId() (int64, error) {
@@ -104,6 +113,7 @@ func (r *ErrorResult) RowsAffected() (int64, error) {
 }
 
 func TestUser_Create_ErrorAffectedRows(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -121,6 +131,7 @@ func TestUser_Create_ErrorAffectedRows(t *testing.T) {
 		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID).
 		WillReturnResult(&ErrorResult{})
 
+	setVar()
 	err = repo.Create(ctx, entities.Subscription{
 		ServiceName: subTest.ServiceName,
 		UserID:      subTest.UserID,
@@ -135,6 +146,7 @@ func TestUser_Create_ErrorAffectedRows(t *testing.T) {
 }
 
 func TestUser_Create_ErrorNotEquilRowsAffected(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -152,6 +164,7 @@ func TestUser_Create_ErrorNotEquilRowsAffected(t *testing.T) {
 		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
+	setVar()
 	err = repo.Create(ctx, entities.Subscription{
 		ServiceName: subTest.ServiceName,
 		UserID:      subTest.UserID,
@@ -166,6 +179,7 @@ func TestUser_Create_ErrorNotEquilRowsAffected(t *testing.T) {
 }
 
 func TestUser_Create_Success(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -179,45 +193,25 @@ func TestUser_Create_Success(t *testing.T) {
 	repo := NewUserRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
-	// endTime := sql.NullTime{Time: time.Now(), Valid: true}
-	tests := []struct {
-		name    string
-		endTime sql.NullTime
-		query   string
-		args    []driver.Value
-	}{
-		{
-			name:  "withoutEndTime",
-			query: "INSERT INTO subscription (price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4)",
-			args:  []driver.Value{subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID},
-		},
-		// {
-		// 	name:    "withEndTime",
-		// 	query:   "INSERT INTO subscription (end_date,price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4,$5)",
-		// 	endTime: endTime,
-		// 	args:  []driver.Value{endTime.Time, subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID},
-		// },
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mock.ExpectExec(regexp.QuoteMeta(tt.query)).
-				WithArgs(tt.args...).
-				WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO subscription (price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4)")).
+		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 
-			err = repo.Create(ctx, entities.Subscription{
-				ServiceName: subTest.ServiceName,
-				UserID:      subTest.UserID,
-				Price:       subTest.Price,
-				StartDate:   subTest.StartDate,
-				EndDate:     tt.endTime,
-			})
+	setVar()
+	err = repo.Create(ctx, entities.Subscription{
+		ServiceName: subTest.ServiceName,
+		UserID:      subTest.UserID,
+		Price:       subTest.Price,
+		StartDate:   subTest.StartDate,
+		// EndDate:     subTest.endTime,
+	})
 
-			require.Nil(t, err)
-			assert.NoError(t, mock.ExpectationsWereMet())
-		})
-	}
+	require.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+// Modifies the global variable columnsSelect, so it cannot be executed in parallel.
+// nolint:paralleltest
 func TestUser_GetByID_ErrorBuilder(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
@@ -245,6 +239,7 @@ func TestUser_GetByID_ErrorBuilder(t *testing.T) {
 }
 
 func TestUser_GetByID_ErrorScan(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -262,16 +257,17 @@ func TestUser_GetByID_ErrorScan(t *testing.T) {
 		WithArgs(subTest.ID).
 		WillReturnError(sql.ErrNoRows)
 
-	columnsSelect = []string{"id", "service_name", "user_id", "price", "start_date", "end_date"}
+	setVar()
 	user, err := repo.GetByID(ctx, subTest.ID)
 
-	assert.NoError(t, mock.ExpectationsWereMet())
-	assert.Error(t, err)
+	require.NoError(t, mock.ExpectationsWereMet())
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), errors.ErrNotFound.Error())
 	assert.Empty(t, user)
 }
 
 func TestUser_GetByID_Success(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -292,10 +288,11 @@ func TestUser_GetByID_Success(t *testing.T) {
 				AddRow(subTest.ID, subTest.ServiceName, subTest.UserID, subTest.Price, subTest.StartDate, subTest.EndDate),
 		)
 
+	setVar()
 	model, err := repo.GetByID(ctx, subTest.ID)
 
-	assert.NoError(t, mock.ExpectationsWereMet())
-	assert.Nil(t, err)
+	require.NoError(t, mock.ExpectationsWereMet())
+	assert.NoError(t, err)
 	assert.Equal(t, subTest.ID, model.ID)
 	assert.Equal(t, subTest.ServiceName, model.ServiceName)
 	assert.Equal(t, subTest.UserID, model.UserID)
@@ -304,6 +301,8 @@ func TestUser_GetByID_Success(t *testing.T) {
 	assert.Equal(t, subTest.EndDate, model.EndDate)
 }
 
+// Modifies the global variable columnsSelectCount, so it cannot be executed in parallel.
+// nolint:paralleltest
 func TestUser_List_ErrorBuildQueryCount(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
@@ -331,6 +330,7 @@ func TestUser_List_ErrorBuildQueryCount(t *testing.T) {
 }
 
 func TestUser_List_ErrorScanQueryCount(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -348,7 +348,7 @@ func TestUser_List_ErrorScanQueryCount(t *testing.T) {
 		WithoutArgs().
 		WillReturnError(sql.ErrNoRows)
 
-	columnsSelectCount = []string{"COUNT(*)"}
+	setVar()
 	respSubs, err := repo.List(ctx, entities.QueryCriteria{})
 
 	require.Error(t, err)
@@ -357,6 +357,8 @@ func TestUser_List_ErrorScanQueryCount(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+// Modifies the global variable columnsSelect, so it cannot be executed in parallel.
+// nolint:paralleltest
 func TestUser_List_ErrorBuildQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
@@ -395,6 +397,7 @@ func TestUser_List_ErrorBuildQuery(t *testing.T) {
 }
 
 func TestUser_List_ErrorGetQuery(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -424,6 +427,7 @@ func TestUser_List_ErrorGetQuery(t *testing.T) {
 		WithoutArgs().
 		WillReturnError(sql.ErrNoRows)
 
+	setVar()
 	respSubs, err := repo.List(ctx, qc)
 
 	require.Error(t, err)
@@ -432,6 +436,7 @@ func TestUser_List_ErrorGetQuery(t *testing.T) {
 }
 
 func TestUser_List_ErrorScanQuery(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -461,7 +466,7 @@ func TestUser_List_ErrorScanQuery(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"id", "service_name", "user_id", "price", "start_date", "end_date"}).
 			AddRow("", subTest.ServiceName, subTest.UserID, subTest.Price, subTest.StartDate, subTest.EndDate),
 		)
-
+	setVar()
 	respSubs, err := repo.List(ctx, qc)
 
 	require.Error(t, err)
@@ -470,6 +475,7 @@ func TestUser_List_ErrorScanQuery(t *testing.T) {
 }
 
 func TestUser_List_ErrorIterationQuery(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -501,6 +507,7 @@ func TestUser_List_ErrorIterationQuery(t *testing.T) {
 			RowError(0, errors.New("network error")),
 		)
 
+	setVar()
 	respSubs, err := repo.List(ctx, qc)
 
 	require.Error(t, err)
@@ -509,6 +516,7 @@ func TestUser_List_ErrorIterationQuery(t *testing.T) {
 }
 
 func TestUser_List_Success(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -533,18 +541,17 @@ func TestUser_List_Success(t *testing.T) {
 		WithoutArgs().
 		WillReturnRows(mock.NewRows([]string{"COUNT(*)"}).AddRow(uint64(3)))
 
-	//totalCount >
 	limit--
 	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, service_name, user_id, price, start_date, end_date FROM subscription LIMIT %d OFFSET %d", limit, offset))).
 		WithoutArgs().
 		WillReturnRows(mock.NewRows([]string{"id", "service_name", "user_id", "price", "start_date", "end_date"}).
 			AddRow(subTest.ID, subTest.ServiceName, subTest.UserID, subTest.Price, subTest.StartDate, subTest.EndDate),
 		)
-
+	setVar()
 	respSubs, err := repo.List(ctx, qc)
 
 	require.NoError(t, err)
-	require.Equal(t, 1, len(respSubs.Data))
+	require.Len(t, respSubs.Data, 1)
 }
 
 var fieldsUpdate = map[string]any{
@@ -552,6 +559,7 @@ var fieldsUpdate = map[string]any{
 }
 
 func TestUser_Update_ValidateFalse(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -574,12 +582,15 @@ func TestUser_Update_ValidateFalse(t *testing.T) {
 	fieldsUpdateIncorrect := map[string]any{
 		"service_name": uint16(1000),
 	}
+	setVar()
 	err = repo.Update(ctx, subTest.ID, fieldsUpdateIncorrect)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "subscriptionRepositories.Update: validate")
 }
 
+// Modifies the global variable table, so it cannot be executed in parallel.
+// nolint:paralleltest
 func TestUser_Update_ErrorBuildQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
@@ -606,6 +617,7 @@ func TestUser_Update_ErrorBuildQuery(t *testing.T) {
 }
 
 func TestUser_Update_ErrorExecQuery(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -623,7 +635,7 @@ func TestUser_Update_ErrorExecQuery(t *testing.T) {
 		WithArgs(fieldsUpdate["service_name"], sqlmock.AnyArg(), subTest.ID).
 		WillReturnError(sql.ErrNoRows)
 
-	table = "subscription"
+	setVar()
 	err = repo.Update(ctx, subTest.ID, fieldsUpdate)
 
 	require.Error(t, err)
@@ -631,6 +643,7 @@ func TestUser_Update_ErrorExecQuery(t *testing.T) {
 }
 
 func TestUser_Update_ErrorAffectedRows(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -648,6 +661,7 @@ func TestUser_Update_ErrorAffectedRows(t *testing.T) {
 		WithArgs(fieldsUpdate["service_name"], sqlmock.AnyArg(), subTest.ID).
 		WillReturnResult(&ErrorResult{})
 
+	setVar()
 	err = repo.Update(ctx, subTest.ID, fieldsUpdate)
 
 	require.Error(t, err)
@@ -655,6 +669,7 @@ func TestUser_Update_ErrorAffectedRows(t *testing.T) {
 }
 
 func TestUser_Update_ErrorNotEquilRowsAffected(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -672,6 +687,7 @@ func TestUser_Update_ErrorNotEquilRowsAffected(t *testing.T) {
 		WithArgs(fieldsUpdate["service_name"], sqlmock.AnyArg(), subTest.ID).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
+	setVar()
 	err = repo.Update(ctx, subTest.ID, fieldsUpdate)
 
 	require.Error(t, err)
@@ -680,6 +696,7 @@ func TestUser_Update_ErrorNotEquilRowsAffected(t *testing.T) {
 }
 
 func TestUser_Update_Success(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -697,12 +714,15 @@ func TestUser_Update_Success(t *testing.T) {
 		WithArgs(fieldsUpdate["service_name"], sqlmock.AnyArg(), subTest.ID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
+	setVar()
 	err = repo.Update(ctx, subTest.ID, fieldsUpdate)
 
 	require.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+// Modifies the global variable table, so it cannot be executed in parallel.
+// nolint:paralleltest
 func TestUser_Delete_ErrorBuildQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
@@ -729,6 +749,7 @@ func TestUser_Delete_ErrorBuildQuery(t *testing.T) {
 }
 
 func TestUser_Delete_ErrorExecQuery(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -746,7 +767,7 @@ func TestUser_Delete_ErrorExecQuery(t *testing.T) {
 		WithArgs(subTest.ID).
 		WillReturnError(sql.ErrNoRows)
 
-	table = "subscription"
+	setVar()
 	err = repo.Delete(ctx, subTest.ID)
 
 	require.Error(t, err)
@@ -755,6 +776,7 @@ func TestUser_Delete_ErrorExecQuery(t *testing.T) {
 }
 
 func TestUser_Delete_ErrorAffectedRows(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -772,6 +794,7 @@ func TestUser_Delete_ErrorAffectedRows(t *testing.T) {
 		WithArgs(subTest.ID).
 		WillReturnResult(&ErrorResult{})
 
+	setVar()
 	err = repo.Delete(ctx, subTest.ID)
 
 	require.Error(t, err)
@@ -780,6 +803,7 @@ func TestUser_Delete_ErrorAffectedRows(t *testing.T) {
 }
 
 func TestUser_Delete_ErrorNotEquilRowsAffected(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -797,6 +821,7 @@ func TestUser_Delete_ErrorNotEquilRowsAffected(t *testing.T) {
 		WithArgs(subTest.ID).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
+	setVar()
 	err = repo.Delete(ctx, subTest.ID)
 
 	require.Error(t, err)
@@ -805,6 +830,7 @@ func TestUser_Delete_ErrorNotEquilRowsAffected(t *testing.T) {
 }
 
 func TestUser_Delete_Success(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -822,11 +848,14 @@ func TestUser_Delete_Success(t *testing.T) {
 		WithArgs(subTest.ID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
+	setVar()
 	err = repo.Delete(ctx, subTest.ID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+// Modifies the global variable columnsCost, so it cannot be executed in parallel.
+// nolint:paralleltest
 func TestUser_GetCost_ErrorBuildQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
@@ -854,6 +883,7 @@ func TestUser_GetCost_ErrorBuildQuery(t *testing.T) {
 }
 
 func TestUser_GetCost_ErrorScan(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -868,11 +898,11 @@ func TestUser_GetCost_ErrorScan(t *testing.T) {
 	ctx := context.Background()
 
 	params := entities.FilterParams{}
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT COALESCE(SUM(price) FROM subscription")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT COALESCE(SUM(price), 0) FROM subscription")).
 		WithoutArgs().
 		WillReturnError(sql.ErrNoRows)
 
-	columnsCost = []string{"COALESCE(SUM(price)"}
+	setVar()
 	cost, err := repo.GetCost(ctx, params)
 
 	require.Error(t, err)
@@ -882,6 +912,7 @@ func TestUser_GetCost_ErrorScan(t *testing.T) {
 }
 
 func TestUser_GetCost_Success(t *testing.T) {
+	t.Parallel()
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err, "create mock")
 	defer func() {
@@ -896,16 +927,17 @@ func TestUser_GetCost_Success(t *testing.T) {
 	ctx := context.Background()
 
 	params := entities.FilterParams{}
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT COALESCE(SUM(price) FROM subscription")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT COALESCE(SUM(price), 0) FROM subscription")).
 		WithoutArgs().
 		WillReturnRows(
 			sqlmock.NewRows([]string{"COALESCE(SUM(price)"}).
 				AddRow(int64(124)),
 		)
 
+	setVar()
 	cost, err := repo.GetCost(ctx, params)
 
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, int64(124), cost)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

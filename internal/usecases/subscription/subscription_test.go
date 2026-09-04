@@ -39,6 +39,7 @@ var (
 )
 
 func TestSubscription_Create_ErrorRepo(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -58,6 +59,7 @@ func TestSubscription_Create_ErrorRepo(t *testing.T) {
 }
 
 func TestSubscription_Create_Success(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -76,6 +78,7 @@ func TestSubscription_Create_Success(t *testing.T) {
 }
 
 func TestSubscription_GetByID_ErrorRepo(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -96,6 +99,7 @@ func TestSubscription_GetByID_ErrorRepo(t *testing.T) {
 }
 
 func TestSubscription_GetByID_Success(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -116,6 +120,7 @@ func TestSubscription_GetByID_Success(t *testing.T) {
 }
 
 func TestSubscription_List_ErrorRepo(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -138,6 +143,7 @@ func TestSubscription_List_ErrorRepo(t *testing.T) {
 }
 
 func TestSubscription_List_Success(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -160,6 +166,7 @@ func TestSubscription_List_Success(t *testing.T) {
 }
 
 func TestSubscription_Update_ErrorRepo(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -183,6 +190,7 @@ func TestSubscription_Update_ErrorRepo(t *testing.T) {
 }
 
 func TestSubscription_Update_Success(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -205,6 +213,7 @@ func TestSubscription_Update_Success(t *testing.T) {
 }
 
 func TestSubscription_Delete_ErrorRepo(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -228,6 +237,7 @@ func TestSubscription_Delete_ErrorRepo(t *testing.T) {
 }
 
 func TestSubscription_Delete_Success(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -250,6 +260,7 @@ func TestSubscription_Delete_Success(t *testing.T) {
 }
 
 func TestSubscription_GetCost_ErrorRepo(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -270,6 +281,7 @@ func TestSubscription_GetCost_ErrorRepo(t *testing.T) {
 }
 
 func TestSubscription_GetCost_Success(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 

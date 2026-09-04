@@ -12,6 +12,7 @@ import (
 )
 
 func TestUser_SubscriptionToMap(t *testing.T) {
+	t.Parallel()
 	subsTest := entities.Subscription{
 		ServiceName: "test service",
 		UserID:      uuid.New(),
@@ -36,6 +37,7 @@ func TestUser_SubscriptionToMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			sub := subsTest
 
 			if tt.expectLen > 4 {
@@ -44,7 +46,7 @@ func TestUser_SubscriptionToMap(t *testing.T) {
 
 			resMap := SubscriptionToMap(sub)
 
-			require.Equal(t, tt.expectLen, len(resMap))
+			require.Len(t, resMap, tt.expectLen)
 		})
 	}
 }

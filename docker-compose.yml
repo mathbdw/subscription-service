@@ -15,8 +15,8 @@ services:
     ports:
       - 8080:8080 # REST
     volumes:
-      - ./migrations:/root/migrations
-      - ./config.yml:/root/config.yml
+      - ./migrations:/root/migrations:ro
+      - ./config.yml:/root/config.yml:ro
       - .:/workspace
 
   postgres:
