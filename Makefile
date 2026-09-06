@@ -56,7 +56,7 @@ test: ## Быстрые тесты (локально)
 .PHONY: test-cover
 test-cover: ## Тесты с покрытием
 	@echo "📊 Running tests with coverage..."
-	CGO_ENABLED=0 go test -v $(TEST_PACKAGES) -cover -coverprofile=$(COVERAGE_FILE) -count=1
+	go test -v $(TEST_PACKAGES) -race -cover -coverprofile=$(COVERAGE_FILE) -count=1
 	go tool cover -func=$(COVERAGE_FILE)
 	@echo "✅ Coverage check complete!"
 

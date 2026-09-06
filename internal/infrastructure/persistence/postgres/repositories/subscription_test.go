@@ -28,11 +28,10 @@ var subTest = entities.Subscription{
 	StartDate:   time.Now(),
 }
 
+var defConfigTest = defaultConfig
+
 func setVar() {
-	table = "subscription"
-	columnsSelect = []string{"id", "service_name", "user_id", "price", "start_date", "end_date"}
-	columnsSelectCount = []string{"COUNT(*)"}
-	columnsCost = []string{"COALESCE(SUM(price), 0)"}
+	defaultConfig = defConfigTest
 }
 
 // Modifies the global variable table, so it cannot be executed in parallel.
@@ -48,14 +47,14 @@ func TestUser_Create_ErrorBuilder(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO (price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4)")).
 		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID).
 		WillReturnError(errors.New("build query"))
 
-	table = ""
+	defaultConfig.table = ""
 	err = repo.Create(ctx, entities.Subscription{
 		ServiceName: subTest.ServiceName,
 		UserID:      subTest.UserID,
@@ -66,6 +65,189 @@ func TestUser_Create_ErrorBuilder(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "subscriptionRepositories.Create: build query")
+}
+
+// Modifies the global variable columnsSelect, so it cannot be executed in parallel.
+// nolint:paralleltest
+func TestUser_GetByID_ErrorBuilder(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err, "create mock")
+	defer func() {
+		_ = mockDB.Close()
+	}()
+
+	ctrl := gomock.NewController(t)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	logger := mocks.NewMockLogger(ctrl)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
+	ctx := context.Background()
+
+	defaultConfig.columnsSelect = []string{}
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT FROM WHERE id = $1)")).
+		WithArgs(subTest.ID).
+		WillReturnError(errors.New("build query"))
+
+	sub, err := repo.GetByID(ctx, subTest.ID)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "subscriptionRepositories.getByID: build query")
+	assert.Nil(t, sub)
+}
+
+// Modifies the global variable columnsSelectCount, so it cannot be executed in parallel.
+// nolint:paralleltest
+func TestUser_List_ErrorBuildQueryCount(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err, "create mock")
+	defer func() {
+		_ = mockDB.Close()
+	}()
+
+	ctrl := gomock.NewController(t)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	logger := mocks.NewMockLogger(ctrl)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
+	ctx := context.Background()
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM ")).
+		WithoutArgs().
+		WillReturnError(errors.New("build query"))
+
+	defaultConfig.columnsSelectCount = []string{}
+	respSubs, err := repo.List(ctx, entities.QueryCriteria{})
+
+	require.Error(t, err)
+	require.Nil(t, respSubs)
+	assert.Contains(t, err.Error(), "subscriptionRepositories.List: build query count()")
+}
+
+// Modifies the global variable columnsSelect, so it cannot be executed in parallel.
+// nolint:paralleltest
+func TestUser_List_ErrorBuildQuery(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err, "create mock")
+	defer func() {
+		_ = mockDB.Close()
+	}()
+
+	ctrl := gomock.NewController(t)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	logger := mocks.NewMockLogger(ctrl)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
+	ctx := context.Background()
+
+	qc := entities.QueryCriteria{
+		Pagination: entities.PaginationParams{Page: uint64(2), Limit: uint64(2)},
+	}
+
+	limit := qc.Pagination.Limit
+	offset := (qc.Pagination.Page - 1) * limit
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM subscription")).
+		WithoutArgs().
+		WillReturnRows(mock.NewRows([]string{"COUNT(*)"}).AddRow(uint64(10)))
+
+	setVar()
+	defaultConfig.columnsSelect = []string{}
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT  FROM subscription LIMIT $1 OFFSET $2")).
+		WithArgs(offset, limit).
+		WillReturnError(errors.New("build query"))
+
+	respSubs, err := repo.List(ctx, qc)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "subscriptionRepositories.List: build query")
+	assert.Nil(t, respSubs)
+}
+
+// Modifies the global variable table, so it cannot be executed in parallel.
+// nolint:paralleltest
+func TestUser_Update_ErrorBuildQuery(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err, "create mock")
+	defer func() {
+		_ = mockDB.Close()
+	}()
+
+	ctrl := gomock.NewController(t)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	logger := mocks.NewMockLogger(ctrl)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
+	ctx := context.Background()
+	fieldsUpdate := map[string]any{
+		"service_name": "Test service",
+	}
+
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE  SET service_name = $1, updated_at = $2 WHERE id = $3")).
+		WithArgs(fieldsUpdate["service_name"], sqlmock.AnyArg(), subTest.ID).
+		WillReturnError(sql.ErrNoRows)
+
+	defaultConfig.table = ""
+	err = repo.Update(ctx, subTest.ID, fieldsUpdate)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "subscriptionRepositories.Update: build query")
+}
+
+// Modifies the global variable table, so it cannot be executed in parallel.
+// nolint:paralleltest
+func TestUser_Delete_ErrorBuildQuery(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err, "create mock")
+	defer func() {
+		_ = mockDB.Close()
+	}()
+
+	ctrl := gomock.NewController(t)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	logger := mocks.NewMockLogger(ctrl)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
+	ctx := context.Background()
+
+	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM  WHERE id = $1")).
+		WithArgs(subTest.ID).
+		WillReturnError(sql.ErrNoRows)
+
+	defaultConfig.table = ""
+	err = repo.Delete(ctx, subTest.ID)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "subscriptionRepositories.Delete: build query")
+}
+
+// Modifies the global variable columnsCost, so it cannot be executed in parallel.
+// nolint:paralleltest
+func TestUser_GetCost_ErrorBuildQuery(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err, "create mock")
+	defer func() {
+		_ = mockDB.Close()
+	}()
+
+	ctrl := gomock.NewController(t)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	logger := mocks.NewMockLogger(ctrl)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
+	ctx := context.Background()
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT  FROM subscription")).
+		WithoutArgs().
+		WillReturnError(errors.New("build query"))
+
+	defaultConfig.columnsCost = []string{}
+	cost, err := repo.GetCost(ctx, entities.FilterParams{})
+
+	require.Error(t, err)
+	require.Equal(t, int64(0), cost)
+	assert.Contains(t, err.Error(), "subscriptionRepositories.GetCost: build query")
+
+	setVar()
 }
 
 func TestUser_Create_ErrorExec(t *testing.T) {
@@ -80,14 +262,13 @@ func TestUser_Create_ErrorExec(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO subscription (price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4)")).
 		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID).
 		WillReturnError(sql.ErrNoRows)
 
-	setVar()
 	err = repo.Create(ctx, entities.Subscription{
 		ServiceName: subTest.ServiceName,
 		UserID:      subTest.UserID,
@@ -124,14 +305,13 @@ func TestUser_Create_ErrorAffectedRows(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO subscription (price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4)")).
 		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID).
 		WillReturnResult(&ErrorResult{})
 
-	setVar()
 	err = repo.Create(ctx, entities.Subscription{
 		ServiceName: subTest.ServiceName,
 		UserID:      subTest.UserID,
@@ -157,14 +337,13 @@ func TestUser_Create_ErrorNotEquilRowsAffected(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO subscription (price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4)")).
 		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
-	setVar()
 	err = repo.Create(ctx, entities.Subscription{
 		ServiceName: subTest.ServiceName,
 		UserID:      subTest.UserID,
@@ -190,14 +369,13 @@ func TestUser_Create_Success(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO subscription (price,service_name,start_date,user_id) VALUES ($1,$2,$3,$4)")).
 		WithArgs(subTest.Price, subTest.ServiceName, subTest.StartDate, subTest.UserID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	setVar()
 	err = repo.Create(ctx, entities.Subscription{
 		ServiceName: subTest.ServiceName,
 		UserID:      subTest.UserID,
@@ -208,34 +386,6 @@ func TestUser_Create_Success(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-// Modifies the global variable columnsSelect, so it cannot be executed in parallel.
-// nolint:paralleltest
-func TestUser_GetByID_ErrorBuilder(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err, "create mock")
-	defer func() {
-		_ = mockDB.Close()
-	}()
-
-	ctrl := gomock.NewController(t)
-	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
-	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
-	ctx := context.Background()
-
-	columnsSelect = []string{}
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT FROM WHERE id = $1)")).
-		WithArgs(subTest.ID).
-		WillReturnError(errors.New("build query"))
-
-	sub, err := repo.GetByID(ctx, subTest.ID)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "subscriptionRepositories.getByID: build query")
-	assert.Nil(t, sub)
 }
 
 func TestUser_GetByID_ErrorScan(t *testing.T) {
@@ -250,14 +400,13 @@ func TestUser_GetByID_ErrorScan(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT id, service_name, user_id, price, start_date, end_date FROM subscription WHERE id = $1")).
 		WithArgs(subTest.ID).
 		WillReturnError(sql.ErrNoRows)
 
-	setVar()
 	user, err := repo.GetByID(ctx, subTest.ID)
 
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -278,7 +427,7 @@ func TestUser_GetByID_Success(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT id, service_name, user_id, price, start_date, end_date FROM subscription WHERE id = $1")).
@@ -288,7 +437,6 @@ func TestUser_GetByID_Success(t *testing.T) {
 				AddRow(subTest.ID, subTest.ServiceName, subTest.UserID, subTest.Price, subTest.StartDate, subTest.EndDate),
 		)
 
-	setVar()
 	model, err := repo.GetByID(ctx, subTest.ID)
 
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -299,34 +447,6 @@ func TestUser_GetByID_Success(t *testing.T) {
 	assert.Equal(t, subTest.Price, model.Price)
 	assert.Equal(t, subTest.StartDate, model.StartDate)
 	assert.Equal(t, subTest.EndDate, model.EndDate)
-}
-
-// Modifies the global variable columnsSelectCount, so it cannot be executed in parallel.
-// nolint:paralleltest
-func TestUser_List_ErrorBuildQueryCount(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err, "create mock")
-	defer func() {
-		_ = mockDB.Close()
-	}()
-
-	ctrl := gomock.NewController(t)
-	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
-	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
-	ctx := context.Background()
-
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM ")).
-		WithoutArgs().
-		WillReturnError(errors.New("build query"))
-
-	columnsSelectCount = []string{}
-	respSubs, err := repo.List(ctx, entities.QueryCriteria{})
-
-	require.Error(t, err)
-	require.Nil(t, respSubs)
-	assert.Contains(t, err.Error(), "subscriptionRepositories.List: build query count()")
 }
 
 func TestUser_List_ErrorScanQueryCount(t *testing.T) {
@@ -341,59 +461,19 @@ func TestUser_List_ErrorScanQueryCount(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM subscription")).
 		WithoutArgs().
 		WillReturnError(sql.ErrNoRows)
 
-	setVar()
 	respSubs, err := repo.List(ctx, entities.QueryCriteria{})
 
 	require.Error(t, err)
 	require.Nil(t, respSubs)
 	assert.Contains(t, err.Error(), "subscriptionRepositories.List: scan query")
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-// Modifies the global variable columnsSelect, so it cannot be executed in parallel.
-// nolint:paralleltest
-func TestUser_List_ErrorBuildQuery(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err, "create mock")
-	defer func() {
-		_ = mockDB.Close()
-	}()
-
-	ctrl := gomock.NewController(t)
-	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
-	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
-	ctx := context.Background()
-
-	qc := entities.QueryCriteria{
-		Pagination: entities.PaginationParams{Page: uint64(2), Limit: uint64(2)},
-	}
-
-	limit := qc.Pagination.Limit
-	offset := (qc.Pagination.Page - 1) * limit
-
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT COUNT(*) FROM subscription")).
-		WithoutArgs().
-		WillReturnRows(mock.NewRows([]string{"COUNT(*)"}).AddRow(uint64(10)))
-
-	columnsSelect = []string{}
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT  FROM subscription LIMIT $1 OFFSET $2")).
-		WithArgs(offset, limit).
-		WillReturnError(errors.New("build query"))
-
-	respSubs, err := repo.List(ctx, qc)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "subscriptionRepositories.List: build query")
-	assert.Nil(t, respSubs)
 }
 
 func TestUser_List_ErrorGetQuery(t *testing.T) {
@@ -408,7 +488,7 @@ func TestUser_List_ErrorGetQuery(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	qc := entities.QueryCriteria{
@@ -422,12 +502,11 @@ func TestUser_List_ErrorGetQuery(t *testing.T) {
 		WithoutArgs().
 		WillReturnRows(mock.NewRows([]string{"COUNT(*)"}).AddRow(uint64(10)))
 
-	columnsSelect = []string{"id", "service_name", "user_id", "price", "start_date", "end_date"}
+	// defaultConfig.columnsSelect = []string{"id", "service_name", "user_id", "price", "start_date", "end_date"}
 	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, service_name, user_id, price, start_date, end_date FROM subscription LIMIT %d OFFSET %d", limit, offset))).
 		WithoutArgs().
 		WillReturnError(sql.ErrNoRows)
 
-	setVar()
 	respSubs, err := repo.List(ctx, qc)
 
 	require.Error(t, err)
@@ -447,7 +526,7 @@ func TestUser_List_ErrorScanQuery(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	qc := entities.QueryCriteria{
@@ -466,7 +545,7 @@ func TestUser_List_ErrorScanQuery(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"id", "service_name", "user_id", "price", "start_date", "end_date"}).
 			AddRow("", subTest.ServiceName, subTest.UserID, subTest.Price, subTest.StartDate, subTest.EndDate),
 		)
-	setVar()
+
 	respSubs, err := repo.List(ctx, qc)
 
 	require.Error(t, err)
@@ -486,7 +565,7 @@ func TestUser_List_ErrorIterationQuery(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	qc := entities.QueryCriteria{
@@ -507,7 +586,6 @@ func TestUser_List_ErrorIterationQuery(t *testing.T) {
 			RowError(0, errors.New("network error")),
 		)
 
-	setVar()
 	respSubs, err := repo.List(ctx, qc)
 
 	require.Error(t, err)
@@ -527,7 +605,7 @@ func TestUser_List_Success(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	qc := entities.QueryCriteria{
@@ -547,15 +625,11 @@ func TestUser_List_Success(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"id", "service_name", "user_id", "price", "start_date", "end_date"}).
 			AddRow(subTest.ID, subTest.ServiceName, subTest.UserID, subTest.Price, subTest.StartDate, subTest.EndDate),
 		)
-	setVar()
+
 	respSubs, err := repo.List(ctx, qc)
 
 	require.NoError(t, err)
 	require.Len(t, respSubs.Data, 1)
-}
-
-var fieldsUpdate = map[string]any{
-	"service_name": "Test service",
 }
 
 func TestUser_Update_ValidateFalse(t *testing.T) {
@@ -570,10 +644,13 @@ func TestUser_Update_ValidateFalse(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	logger.EXPECT().Error(gomock.Any(), gomock.Any())
+	fieldsUpdate := map[string]any{
+		"service_name": "Test service",
+	}
 
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE subscription SET service_name = $1, updated_at = $2 WHERE id = $3")).
 		WithArgs(fieldsUpdate["service_name"], sqlmock.AnyArg(), subTest.ID).
@@ -582,38 +659,11 @@ func TestUser_Update_ValidateFalse(t *testing.T) {
 	fieldsUpdateIncorrect := map[string]any{
 		"service_name": uint16(1000),
 	}
-	setVar()
+
 	err = repo.Update(ctx, subTest.ID, fieldsUpdateIncorrect)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "subscriptionRepositories.Update: validate")
-}
-
-// Modifies the global variable table, so it cannot be executed in parallel.
-// nolint:paralleltest
-func TestUser_Update_ErrorBuildQuery(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err, "create mock")
-	defer func() {
-		_ = mockDB.Close()
-	}()
-
-	ctrl := gomock.NewController(t)
-	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
-	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
-	ctx := context.Background()
-
-	mock.ExpectExec(regexp.QuoteMeta("UPDATE  SET service_name = $1, updated_at = $2 WHERE id = $3")).
-		WithArgs(fieldsUpdate["service_name"], sqlmock.AnyArg(), subTest.ID).
-		WillReturnError(sql.ErrNoRows)
-
-	table = ""
-	err = repo.Update(ctx, subTest.ID, fieldsUpdate)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "subscriptionRepositories.Update: build query")
 }
 
 func TestUser_Update_ErrorExecQuery(t *testing.T) {
@@ -628,14 +678,16 @@ func TestUser_Update_ErrorExecQuery(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
+	fieldsUpdate := map[string]any{
+		"service_name": "Test service",
+	}
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE subscription SET service_name = $1, updated_at = $2 WHERE id = $3")).
 		WithArgs(fieldsUpdate["service_name"], sqlmock.AnyArg(), subTest.ID).
 		WillReturnError(sql.ErrNoRows)
 
-	setVar()
 	err = repo.Update(ctx, subTest.ID, fieldsUpdate)
 
 	require.Error(t, err)
@@ -654,14 +706,16 @@ func TestUser_Update_ErrorAffectedRows(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
+	fieldsUpdate := map[string]any{
+		"service_name": "Test service",
+	}
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE subscription SET service_name = $1, updated_at = $2 WHERE id = $3")).
 		WithArgs(fieldsUpdate["service_name"], sqlmock.AnyArg(), subTest.ID).
 		WillReturnResult(&ErrorResult{})
 
-	setVar()
 	err = repo.Update(ctx, subTest.ID, fieldsUpdate)
 
 	require.Error(t, err)
@@ -680,14 +734,16 @@ func TestUser_Update_ErrorNotEquilRowsAffected(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
+	fieldsUpdate := map[string]any{
+		"service_name": "Test service",
+	}
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE subscription SET service_name = $1, updated_at = $2 WHERE id = $3")).
 		WithArgs(fieldsUpdate["service_name"], sqlmock.AnyArg(), subTest.ID).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
-	setVar()
 	err = repo.Update(ctx, subTest.ID, fieldsUpdate)
 
 	require.Error(t, err)
@@ -707,45 +763,20 @@ func TestUser_Update_Success(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
+	fieldsUpdate := map[string]any{
+		"service_name": "Test service",
+	}
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE subscription SET service_name = $1, updated_at = $2 WHERE id = $3")).
 		WithArgs(fieldsUpdate["service_name"], sqlmock.AnyArg(), subTest.ID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	setVar()
 	err = repo.Update(ctx, subTest.ID, fieldsUpdate)
 
 	require.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-// Modifies the global variable table, so it cannot be executed in parallel.
-// nolint:paralleltest
-func TestUser_Delete_ErrorBuildQuery(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err, "create mock")
-	defer func() {
-		_ = mockDB.Close()
-	}()
-
-	ctrl := gomock.NewController(t)
-	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
-	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
-	ctx := context.Background()
-
-	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM  WHERE id = $1")).
-		WithArgs(subTest.ID).
-		WillReturnError(sql.ErrNoRows)
-
-	table = ""
-	err = repo.Delete(ctx, subTest.ID)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "subscriptionRepositories.Delete: build query")
 }
 
 func TestUser_Delete_ErrorExecQuery(t *testing.T) {
@@ -760,14 +791,13 @@ func TestUser_Delete_ErrorExecQuery(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM subscription WHERE id = $1")).
 		WithArgs(subTest.ID).
 		WillReturnError(sql.ErrNoRows)
 
-	setVar()
 	err = repo.Delete(ctx, subTest.ID)
 
 	require.Error(t, err)
@@ -787,14 +817,13 @@ func TestUser_Delete_ErrorAffectedRows(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM subscription WHERE id = $1")).
 		WithArgs(subTest.ID).
 		WillReturnResult(&ErrorResult{})
 
-	setVar()
 	err = repo.Delete(ctx, subTest.ID)
 
 	require.Error(t, err)
@@ -814,14 +843,13 @@ func TestUser_Delete_ErrorNotEquilRowsAffected(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM subscription WHERE id = $1")).
 		WithArgs(subTest.ID).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
-	setVar()
 	err = repo.Delete(ctx, subTest.ID)
 
 	require.Error(t, err)
@@ -841,45 +869,16 @@ func TestUser_Delete_Success(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM subscription WHERE id = $1")).
 		WithArgs(subTest.ID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	setVar()
 	err = repo.Delete(ctx, subTest.ID)
 	require.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-// Modifies the global variable columnsCost, so it cannot be executed in parallel.
-// nolint:paralleltest
-func TestUser_GetCost_ErrorBuildQuery(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err, "create mock")
-	defer func() {
-		_ = mockDB.Close()
-	}()
-
-	ctrl := gomock.NewController(t)
-	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
-	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
-	ctx := context.Background()
-
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT  FROM subscription")).
-		WithoutArgs().
-		WillReturnError(errors.New("build query"))
-
-	columnsCost = []string{}
-	cost, err := repo.GetCost(ctx, entities.FilterParams{})
-
-	require.Error(t, err)
-	require.Equal(t, int64(0), cost)
-	assert.Contains(t, err.Error(), "subscriptionRepositories.GetCost: build query")
 }
 
 func TestUser_GetCost_ErrorScan(t *testing.T) {
@@ -894,7 +893,7 @@ func TestUser_GetCost_ErrorScan(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	params := entities.FilterParams{}
@@ -902,7 +901,6 @@ func TestUser_GetCost_ErrorScan(t *testing.T) {
 		WithoutArgs().
 		WillReturnError(sql.ErrNoRows)
 
-	setVar()
 	cost, err := repo.GetCost(ctx, params)
 
 	require.Error(t, err)
@@ -923,7 +921,7 @@ func TestUser_GetCost_Success(t *testing.T) {
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	logger := mocks.NewMockLogger(ctrl)
-	repo := NewUserRepository(sqlxDB, builder, logger)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
 	ctx := context.Background()
 
 	params := entities.FilterParams{}
@@ -934,7 +932,6 @@ func TestUser_GetCost_Success(t *testing.T) {
 				AddRow(int64(124)),
 		)
 
-	setVar()
 	cost, err := repo.GetCost(ctx, params)
 
 	require.NoError(t, err)

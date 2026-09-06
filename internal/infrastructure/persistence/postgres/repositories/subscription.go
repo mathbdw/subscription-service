@@ -19,12 +19,13 @@ import (
 type subscriptionRepository struct {
 	querier sqlx.ExtContext
 	builder sq.StatementBuilderType
+	table   string
 
 	logger observability.Logger
 }
 
-// NewUserRepository - Constructor UserRepository.
-func NewUserRepository(querier sqlx.ExtContext, builder sq.StatementBuilderType, logger observability.Logger) repositories.SubscriptionRepository {
+// NewSubscriptionRepository - Constructor UserRepository.
+func NewSubscriptionRepository(querier sqlx.ExtContext, builder sq.StatementBuilderType, logger observability.Logger) repositories.SubscriptionRepository {
 	return &subscriptionRepository{
 		querier: querier,
 		builder: builder,
@@ -33,18 +34,25 @@ func NewUserRepository(querier sqlx.ExtContext, builder sq.StatementBuilderType,
 	}
 }
 
-var (
-	table              = "subscription"
-	columnsSelect      = []string{"id", "service_name", "user_id", "price", "start_date", "end_date"}
-	columnsSelectCount = []string{"COUNT(*)"}
-	columnsCost        = []string{"COALESCE(SUM(price), 0)"}
-)
+type repoConfig struct {
+	table              string
+	columnsSelect      []string
+	columnsSelectCount []string
+	columnsCost        []string
+}
+
+var defaultConfig = repoConfig{
+	table:              "subscription",
+	columnsSelect:      []string{"id", "service_name", "user_id", "price", "start_date", "end_date"},
+	columnsSelectCount: []string{"COUNT(*)"},
+	columnsCost:        []string{"COALESCE(SUM(price), 0)"},
+}
 
 // Create - create new row.
 func (r *subscriptionRepository) Create(ctx context.Context, subs entities.Subscription) error {
 	dataMap := SubscriptionToMap(subs)
 
-	query, args, err := r.builder.Insert(table).SetMap(dataMap).ToSql()
+	query, args, err := r.builder.Insert(defaultConfig.table).SetMap(dataMap).ToSql()
 	if err != nil {
 		return errs.Wrap(err, "subscriptionRepositories.Create: build query")
 	}
@@ -68,8 +76,8 @@ func (r *subscriptionRepository) Create(ctx context.Context, subs entities.Subsc
 
 // GetByID - Returns subscription by ID.
 func (r *subscriptionRepository) GetByID(ctx context.Context, id int64) (*entities.Subscription, error) {
-	query, args, err := r.builder.Select(columnsSelect...).
-		From(table).
+	query, args, err := r.builder.Select(defaultConfig.columnsSelect...).
+		From(defaultConfig.table).
 		Where(sq.Eq{"id": id}).
 		ToSql()
 	if err != nil {
@@ -91,7 +99,7 @@ func (r *subscriptionRepository) GetByID(ctx context.Context, id int64) (*entiti
 
 // List - Returns a list of subscription using query criteria.
 func (r *subscriptionRepository) List(ctx context.Context, params entities.QueryCriteria) (*entities.ResponseListSubscription, error) {
-	query := r.builder.Select(columnsSelectCount...).From(table)
+	query := r.builder.Select(defaultConfig.columnsSelectCount...).From(defaultConfig.table)
 	query = conditionList(query, params.Filter)
 	sql, args, err := query.ToSql()
 	if err != nil {
@@ -106,7 +114,7 @@ func (r *subscriptionRepository) List(ctx context.Context, params entities.Query
 
 	limit := params.Pagination.Limit
 
-	query = r.builder.Select(columnsSelect...).From(table)
+	query = r.builder.Select(defaultConfig.columnsSelect...).From(defaultConfig.table)
 	query = conditionList(query, params.Filter)
 	query = paginationList(query, totalCount, &params.Pagination)
 	query = sortList(query, params.Sort)
@@ -170,7 +178,7 @@ func (r *subscriptionRepository) Update(ctx context.Context, id int64, fields ma
 
 	fields["updated_at"] = time.Now().UTC()
 
-	query, args, err := r.builder.Update(table).
+	query, args, err := r.builder.Update(defaultConfig.table).
 		Where(sq.Eq{"id": id}).
 		SetMap(fields).
 		ToSql()
@@ -197,7 +205,7 @@ func (r *subscriptionRepository) Update(ctx context.Context, id int64, fields ma
 
 // Delete - Deleted row with the id.
 func (r *subscriptionRepository) Delete(ctx context.Context, id int64) error {
-	query, args, err := r.builder.Delete(table).
+	query, args, err := r.builder.Delete(defaultConfig.table).
 		Where(sq.Eq{"id": id}).
 		ToSql()
 	if err != nil {
@@ -223,7 +231,7 @@ func (r *subscriptionRepository) Delete(ctx context.Context, id int64) error {
 
 // GetCost - Returns total cost of user subscription.
 func (r *subscriptionRepository) GetCost(ctx context.Context, params entities.FilterParams) (int64, error) {
-	query := r.builder.Select(columnsCost...).From(table)
+	query := r.builder.Select(defaultConfig.columnsCost...).From(defaultConfig.table)
 	query = conditionCost(query, params)
 	sql, args, err := query.ToSql()
 	if err != nil {

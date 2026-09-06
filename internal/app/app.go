@@ -62,7 +62,7 @@ func RunApp(cfg *config.Config) {
 	}()
 	applyMigration(cfg, pg, logger)
 
-	repoSub := repositories.NewUserRepository(pg.Sqlx, pg.Builder, logger)
+	repoSub := repositories.NewSubscriptionRepository(pg.Sqlx, pg.Builder, logger)
 	usSub := subscription.NewUsecase(repoSub, logger)
 
 	httpServer := httpserver.New(
