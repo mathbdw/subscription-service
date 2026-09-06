@@ -13,7 +13,6 @@ env:
   REGISTRY: ghcr.io  # GitHub Container Registry
   IMAGE_NAME: ${{ github.repository }}
   EXCLUDE_DIRS: vendor|docs|mocks|bin
-  TEST_PACKAGES: $(shell go list ./... | grep -v -E "($(EXCLUDE_DIRS))")
 
 jobs:
   # Джоба проверки качества кода
@@ -57,12 +56,22 @@ jobs:
           cache: true
 
       - name: Test
-        run: go test -race -coverprofile=coverage.out -covermode=atomic -v ${{ env.TEST_PACKAGES}}
+        run: go test -race -coverprofile=coverage.out -covermode=atomic -coverpkg=./internal/... ./...
 
       # (Опционально) Проверяем покрытие кода (если меньше 80% — падаем)
       - name: Проверяем покрытие
         run: |
-          go tool cover -func=coverage.out | grep total | awk '{print $3}' | awk -F'%' '{if ($1 < 80) exit 1}'
+          # Тестируем все пакеты, но coverage считаем только для нужных
+          go test -race -coverprofile=coverage.out -covermode=atomic -coverpkg=./internal/... ./...
+          
+          # Проверяем покрытие
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Coverage: ${COVERAGE}%"
+          
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "Coverage ${COVERAGE}% is below 80%"
+            exit 1
+          fi
 
       # Опционально: Залить покрытие в Codecov или SonarQube
       # - name: Upload coverage
