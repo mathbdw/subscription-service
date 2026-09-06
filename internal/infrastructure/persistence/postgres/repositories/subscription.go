@@ -19,7 +19,6 @@ import (
 type subscriptionRepository struct {
 	querier sqlx.ExtContext
 	builder sq.StatementBuilderType
-	table   string
 
 	logger observability.Logger
 }
