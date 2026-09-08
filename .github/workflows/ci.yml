@@ -1,11 +1,10 @@
 name: Go CI Pipeline
 
-# Ручной запуск
-  workflow_dispatch:
-    description: 'Manual workflow run'
-    
+
 # Когда запускать?
 on:
+  workflow_dispatch: # Ручной запуск
+
   push:
     branches: [ master, develop ]
   pull_request:
