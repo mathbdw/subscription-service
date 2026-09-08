@@ -33,11 +33,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 FROM gcr.io/distroless/static-debian12:nonroot
 
 # Копируем только бинарник из builder stage
-COPY --from=builder /app/bin/http-server /http-server
+COPY --from=builder /app/bin/http-server /app/http-server
 
 # Копируем конфигурацию и миграции (если нужны)
-COPY --from=builder /app/config.yml /config.yml
-COPY --from=builder /app/migrations /migrations
+COPY --from=builder /app/config.yml /app/config.yml
+COPY --from=builder /app/migrations /app/migrations
 
 # Используем nonroot пользователя
 USER nonroot:nonroot
