@@ -122,3 +122,31 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-24.04
+    needs: build-and-push
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # Переходим в директорию
+            cd /opt/subscription-service
+            
+            # Скачиваем новый образ
+            docker compose pull http-server
+            
+            # Перезапускаем только http-server
+            docker compose up -d http-server
+            
+            # Очищаем старые образы
+            docker image prune -f
+            
+            # Показываем статус
+            docker compose ps
