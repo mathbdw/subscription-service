@@ -17,12 +17,12 @@ const (
 
 // Database - contains all parameters database connection.
 type Database struct {
-	Host            string        `yaml:"host" env:"PG_HOST"`
-	Port            uint16        `yaml:"port" env:"PG_PORT"`
-	User            string        `yaml:"user" env:"PG_USER"`
-	Password        string        `yaml:"password" env:"PG_PASSWORD"`
+	Host            string        `yaml:"host" env:"DB_HOST"`
+	Port            uint16        `yaml:"port" env:"DB_PORT"`
+	User            string        `yaml:"user" env:"DB_USER"`
+	Password        string        `yaml:"password" env:"DB_PASSWORD"`
 	Migrations      string        `yaml:"migrations"`
-	Name            string        `yaml:"name"`
+	Name            string        `yaml:"name" env:"DB_NAME"`
 	SslMode         string        `yaml:"sslmode"`
 	Driver          string        `yaml:"driver"`
 	MaxOpenConns    int           `yaml:"maxOpenConns"`
@@ -34,7 +34,7 @@ type Database struct {
 // Rest - contains parameter rest json connection.
 type Rest struct {
 	Host            string        `yaml:"host" env:"REST_HOST"`
-	Port            uint16        `yaml:"port"`
+	Port            uint16        `yaml:"port" env:"REST_PORT"`
 	Prefork         bool          `yaml:"prefork"`
 	ReadTimeout     time.Duration `yaml:"readTimeout"`
 	WriteTimeout    time.Duration `yaml:"writeTimeout"`

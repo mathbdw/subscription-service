@@ -30,12 +30,9 @@ services:
     ports:
       - 5433:5432
     environment:
-      POSTGRES_PASSWORD: postgres
-      PG_USER: postgres
-      PG_PASSWORD: postgres
-      PG_DB: test
-      APP_DB_USER: docker
-      APP_DB_PASS: docker
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - pgdata:/var/lib/postgresql/16/data
     networks:
