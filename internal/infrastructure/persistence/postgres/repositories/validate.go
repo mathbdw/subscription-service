@@ -6,6 +6,7 @@ import (
 	"github.com/mathbdw/subscription-service/internal/domain/entities"
 )
 
+// validateUpdateFields — validates the fields map for type compliance.
 func validateUpdateFields(fields map[string]any) error {
 	for key, value := range fields {
 		validator, ok := entities.SubscriptionUpdateFields[key]
