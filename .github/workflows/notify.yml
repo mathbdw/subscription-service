@@ -1,0 +1,27 @@
+name: Notify Telegram
+
+on:
+  workflow_call:
+    inputs:
+      status:
+        required: true
+        type: string
+      message:
+        required: false
+        type: string
+        default: "Деплой завершён"
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Telegram message
+        run: |
+          if [ "${{ inputs.status }}" = "success" ]; then
+            ICON="✅"
+          else
+            ICON="❌"
+          fi
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="$ICON ${{ inputs.message }}"

@@ -82,7 +82,7 @@ jobs:
       #   with:
       #     files: coverage.out
 
-   # НОВАЯ ДЖОБА: Сборка Docker-образа
+  # Сборка Docker-образа
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-24.04
@@ -136,17 +136,35 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # Переходим в директорию
+            set -e
             cd /opt/subscription-service
-            
-            # Скачиваем новый образ
             docker compose pull http-server
-            
-            # Перезапускаем только http-server
             docker compose up -d http-server
-            
-            # Очищаем старые образы
             docker image prune -f
+          
+            # Ждём, пока контейнер станет healthy
+            for i in $(seq 1 12); do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' subscription-service-http-server-1 2>/dev/null || echo "not_found")
+              if [ "$STATUS" = "healthy" ]; then
+                echo "✅ Container is healthy"
+                exit 0
+              fi
+              if [ "$STATUS" = "unhealthy" ] || [ "$STATUS" = "not_found" ]; then
+                echo "❌ Container failed"
+                docker logs subscription-service-http-server-1 --tail 50
+                exit 1
+              fi
+              echo "Waiting for container... ($STATUS)"
+              sleep 10
+            done
             
-            # Показываем статус
-            docker compose ps
+            echo "❌ Timeout waiting for container"
+            docker logs subscription-service-http-server-1 --tail 50
+            exit 1
+      - name: Notify
+        if: always()
+        uses: ./.github/actions/notify
+        with:
+          status: ${{ job.status }}   # ← статус всей джобы
+          telegram_token: ${{ secrets.TELEGRAM_TOKEN }}
+          telegram_chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}

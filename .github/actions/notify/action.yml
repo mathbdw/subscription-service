@@ -1,0 +1,26 @@
+name: Notify Telegram
+description: Send message to Telegram
+
+inputs:
+  status:
+    required: true
+    description: 'success or failure'
+  telegram_token:
+    required: true
+  telegram_chat_id:
+    required: true
+
+runs:
+  using: composite           # ← ключевое: тип действия
+  steps:
+    - name: Send message
+      shell: bash            # ← shell обязателен для composite
+      run: |
+        if [ "${{ inputs.status }}" = "success" ]; then
+          TEXT="✅ ${{ github.repository }}: ${{ github.workflow }} успешен"
+        else
+          TEXT="❌ ${{ github.repository }}: ${{ github.workflow }} упал"
+        fi
+        curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
+          -d chat_id="${{ inputs.telegram_chat_id }}" \
+          -d text="$TEXT"
