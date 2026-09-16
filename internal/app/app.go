@@ -1,9 +1,14 @@
 package app
 
 import (
+	"fmt"
+	"io"
+	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/pressly/goose/v3"
 
@@ -93,5 +98,23 @@ func RunApp(cfg *config.Config) {
 		logger.Error("app.RunApp: httpServer.Shutdown", map[string]any{"error": err.Error()})
 	} else {
 		logger.Error("app.RunApp: httpServer shutting down...", nil)
+	}
+}
+
+// RunHealth - checks the service readiness endpoint and exits with code 1
+// if the service is not ready. Used as a Docker healthcheck command.
+func RunHealth(cfg *config.Config) {
+	url := "http://" + net.JoinHostPort(cfg.Rest.Host, fmt.Sprintf("%d", cfg.Rest.Port)) + "/state/readiness"
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		os.Exit(1)
 	}
 }
