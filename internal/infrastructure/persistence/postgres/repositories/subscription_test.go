@@ -938,3 +938,53 @@ func TestUser_GetCost_Success(t *testing.T) {
 	require.Equal(t, int64(124), cost)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
+
+func TestUser_Check_ErrorScan(t *testing.T) {
+	t.Parallel()
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err, "create mock")
+	defer func() {
+		_ = mockDB.Close()
+	}()
+
+	ctrl := gomock.NewController(t)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	logger := mocks.NewMockLogger(ctrl)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
+	ctx := context.Background()
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT 1")).
+		WithoutArgs().
+		WillReturnError(sql.ErrNoRows)
+
+	err = repo.Check(ctx)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "subscriptionRepositories.Check: ping")
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUser_Check_Success(t *testing.T) {
+	t.Parallel()
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err, "create mock")
+	defer func() {
+		_ = mockDB.Close()
+	}()
+
+	ctrl := gomock.NewController(t)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	logger := mocks.NewMockLogger(ctrl)
+	repo := NewSubscriptionRepository(sqlxDB, builder, logger)
+	ctx := context.Background()
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT 1")).
+		WithoutArgs().
+		WillReturnRows(sqlmock.NewRows([]string{"SELECT 1"}).AddRow(int(10)))
+
+	err = repo.Check(ctx)
+	require.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}

@@ -15,4 +15,5 @@ type SubscriptionRepository interface {
 	Update(ctx context.Context, id int64, fields map[string]any) error
 	Delete(ctx context.Context, id int64) error
 	GetCost(ctx context.Context, params entities.FilterParams) (int64, error)
+	Check(ctx context.Context) error
 }

@@ -72,7 +72,7 @@ func RunApp(cfg *config.Config) {
 		httpserver.WriteTimeout(cfg.Rest.WriteTimeout),
 		httpserver.ShutdownTimeout(cfg.Rest.ShutdownTimeout),
 	)
-	httpimp.NewRouter(httpServer.App, &cfg.Rest, usSub, logger)
+	httpimp.NewRouter(httpServer.App, cfg, usSub, logger)
 
 	httpServer.Start()
 

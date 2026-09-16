@@ -33,13 +33,14 @@ type Database struct {
 
 // Rest - contains parameter rest json connection.
 type Rest struct {
-	Host            string        `yaml:"host" env:"REST_HOST"`
-	Port            uint16        `yaml:"port" env:"REST_PORT"`
-	Prefork         bool          `yaml:"prefork"`
-	ReadTimeout     time.Duration `yaml:"readTimeout"`
-	WriteTimeout    time.Duration `yaml:"writeTimeout"`
-	ShutdownTimeout time.Duration `yaml:"shutdownTimeout"`
-	Swagger         bool          `yaml:"swagger"`
+	Host             string        `yaml:"host" env:"REST_HOST"`
+	Port             uint16        `yaml:"port" env:"REST_PORT"`
+	Prefork          bool          `yaml:"prefork"`
+	ReadTimeout      time.Duration `yaml:"readTimeout"`
+	WriteTimeout     time.Duration `yaml:"writeTimeout"`
+	ShutdownTimeout  time.Duration `yaml:"shutdownTimeout"`
+	ReadinessTimeout time.Duration `yaml:"readinessTimeout"`
+	Swagger          bool          `yaml:"swagger"`
 }
 
 // Project - contains all parameters project information.

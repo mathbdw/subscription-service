@@ -299,3 +299,42 @@ func TestSubscription_GetCost_Success(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(124), resCost)
 }
+
+func TestSubscription_Check_ErrorRepo(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockSubRepo := mocks.NewMockSubscriptionRepository(ctrl)
+	mockLogger := mocks.NewMockLogger(ctrl)
+	us := NewUsecase(mockSubRepo, mockLogger)
+	ctx := context.Background()
+
+	mockSubRepo.EXPECT().
+		Check(ctx).
+		Return(errors.New("error repo"))
+
+	err := us.Check(ctx)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Usecase.Check: repo exec")
+}
+
+func TestSubscription_Check_Success(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockSubRepo := mocks.NewMockSubscriptionRepository(ctrl)
+	mockLogger := mocks.NewMockLogger(ctrl)
+	us := NewUsecase(mockSubRepo, mockLogger)
+	ctx := context.Background()
+
+	mockSubRepo.EXPECT().
+		Check(ctx).
+		Return(nil)
+
+	err := us.Check(ctx)
+
+	require.NoError(t, err)
+}

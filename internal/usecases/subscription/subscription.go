@@ -88,3 +88,12 @@ func (uc *Usecase) GetCost(ctx context.Context, params entities.FilterParams) (i
 
 	return cost, nil
 }
+
+// Check - Returns state connect repository.
+func (uc *Usecase) Check(ctx context.Context) error {
+	if err := uc.repo.Check(ctx); err != nil {
+		return errors.Wrap(err, "Usecase.Check: repo exec")
+	}
+
+	return nil
+}

@@ -11,7 +11,9 @@ rest:
   readTimeout:     10s
   writeTimeout:    10s
   shutdownTimeout: 30s
+  readinessTimeout: 2s
   swagger: true
+  
 
 database:
   name: test

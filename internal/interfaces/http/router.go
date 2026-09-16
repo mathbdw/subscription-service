@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/swagger"
 
 	"github.com/mathbdw/subscription-service/config"
+	"github.com/mathbdw/subscription-service/internal/interfaces/http/handlers/api/state"
 	v1 "github.com/mathbdw/subscription-service/internal/interfaces/http/handlers/api/v1"
 	"github.com/mathbdw/subscription-service/internal/interfaces/http/middleware"
 	"github.com/mathbdw/subscription-service/internal/interfaces/observability"
@@ -21,14 +22,22 @@ import (
 // @version     1.0
 // @host        localhost:8080
 // @BasePath    /api/v1.
-func NewRouter(app *fiber.App, cfg *config.Rest, uc uc.Usecase, logger observability.Logger) {
+func NewRouter(app *fiber.App, cfg *config.Config, uc uc.Usecase, logger observability.Logger) {
 	// Options
 	app.Use(middleware.Logger(logger))
 	app.Use(middleware.Recovery(logger))
 
 	// Swagger
-	if cfg.Swagger {
+	if cfg.Rest.Swagger {
 		app.Get("/swagger/*", swagger.HandlerDefault)
+	}
+
+	// Status
+	statusGroup := app.Group("/state")
+	{
+		statusGroup.Get("/liveness", state.Liveness())
+		statusGroup.Get("/readiness", state.Readiness(uc, cfg.Rest.ReadinessTimeout))
+		statusGroup.Get("/version", state.Version(cfg))
 	}
 
 	// Routers

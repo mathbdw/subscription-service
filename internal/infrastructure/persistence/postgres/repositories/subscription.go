@@ -245,3 +245,12 @@ func (r *subscriptionRepository) GetCost(ctx context.Context, params entities.Fi
 	}
 	return cost, nil
 }
+
+// Check - Returns state db connect.
+func (r *subscriptionRepository) Check(ctx context.Context) error {
+	var tmp int
+	if err := r.querier.QueryRowxContext(ctx, "SELECT 1").Scan(&tmp); err != nil {
+		return errs.Wrap(err, "subscriptionRepositories.Check: ping")
+	}
+	return nil
+}
