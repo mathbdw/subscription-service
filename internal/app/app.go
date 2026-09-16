@@ -103,18 +103,23 @@ func RunApp(cfg *config.Config) {
 
 // RunHealth - checks the service readiness endpoint and exits with code 1
 // if the service is not ready. Used as a Docker healthcheck command.
-func RunHealth(cfg *config.Config) {
+func RunHealth(cfg *config.Config) error {
 	url := "http://" + net.JoinHostPort(cfg.Rest.Host, fmt.Sprintf("%d", cfg.Rest.Port)) + "/state/readiness"
 
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Get(url)
 	if err != nil {
-		os.Exit(1)
+		return err
 	}
 	defer resp.Body.Close()
-	_, _ = io.Copy(io.Discard, resp.Body)
+	_, err = io.Copy(io.Discard, resp.Body)
+	if err != nil {
+		fmt.Printf("app.RunHealth: %s", err.Error())
+	}
 
 	if resp.StatusCode != http.StatusOK {
-		os.Exit(1)
+		return err
 	}
+
+	return nil
 }

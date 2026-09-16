@@ -16,7 +16,10 @@ func main() {
 	}
 
 	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
-		app.RunHealth(cfg)
+		err := app.RunHealth(cfg)
+		if err != nil {
+			os.Exit(1)
+		}
 	} else {
 		// Run app
 		app.RunApp(cfg)
