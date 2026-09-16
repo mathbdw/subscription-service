@@ -47,6 +47,10 @@ lint: ## Запуск golangci-lint
 	golangci-lint run --timeout=5m
 	@echo "✅ Linting passed!"
 
+.PHONY: govulncheck
+govulncheck: ## Проверить, что уязвимости ушли
+	govulncheck ./...
+
 .PHONY: test
 test: ## Быстрые тесты (локально)
 	@echo "🧪 Running tests (fast mode)..."
