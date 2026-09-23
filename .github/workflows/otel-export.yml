@@ -19,7 +19,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh -f -N -L 4317:localhost:4317 \
+          ssh -f -N -L 4318:localhost:4318 \
             -o StrictHostKeyChecking=no \
             -o ExitOnForwardFailure=yes \
             ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}
